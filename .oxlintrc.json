@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/oxlintrc.json",
+  "plugins": ["import", "vitest", "node"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "vitest/no-focused-tests": "error"
+  }
+}
