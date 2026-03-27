@@ -1,0 +1,92 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap");
+
+:root {
+  --vp-font-family-base: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --vp-font-family-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+  --vp-c-brand-1: #1d4ed8;
+  --vp-c-brand-2: #3b82f6;
+  --vp-c-brand-3: #60a5fa;
+  --vp-c-brand-soft: rgba(59, 130, 246, 0.16);
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc .title {
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.layout {
+  background:
+    radial-gradient(1000px 460px at 12% -6%, rgba(29, 78, 216, 0.14), transparent 64%),
+    radial-gradient(900px 500px at 88% -8%, rgba(2, 132, 199, 0.12), transparent 68%);
+}
+
+.bmp-hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(30, 64, 175, 0.14);
+  border-radius: 20px;
+  padding: 2.5rem 1.4rem;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.75));
+  animation: hero-enter 0.45s ease-out;
+}
+
+.bmp-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(125deg, rgba(37, 99, 235, 0.06), transparent 45%);
+}
+
+.bmp-hero > * {
+  position: relative;
+}
+
+.bmp-hero p {
+  font-size: 1.03rem;
+}
+
+.bmp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.bmp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.3rem;
+}
+
+.bmp-card {
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.9rem;
+}
+
+.bmp-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.vp-doc div[class*="language-"] {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 14px 30px -24px rgba(37, 99, 235, 0.45);
+}
+
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
