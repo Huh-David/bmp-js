@@ -1,5 +1,20 @@
 # @huh-david/bmp-js
 
+## 0.6.0
+
+### Minor Changes
+
+- 88c34f1: Add an official optional Sharp adapter subexport at `@huh-david/bmp-js/sharp`.
+
+  The adapter adds:
+
+  - `isBmp(input)` signature checks
+  - `decodeForSharp(input)` / `toSharpInput(input)` RGBA+raw decoding helpers
+  - `sharpFromBmp(input, sharpModule?)` direct Sharp instance creation
+  - `encodeFromSharp({ data, info }, options?)` raw Sharp output to BMP encoding
+
+  `sharp` is configured as an optional peer dependency so core package users are not required to install it.
+
 ## 0.5.0
 
 ### Minor Changes
