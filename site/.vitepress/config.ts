@@ -12,6 +12,7 @@ export default defineConfig({
     nav: [
       { text: "Home", link: "/" },
       { text: "Quickstart", link: "/quickstart" },
+      { text: "Migration", link: "/migration" },
       { text: "API", link: "/api" },
       { text: "Sharp Adapter", link: "/sharp" },
       { text: "Compatibility", link: "/compatibility" },
@@ -25,6 +26,7 @@ export default defineConfig({
         items: [
           { text: "Home", link: "/" },
           { text: "Quickstart", link: "/quickstart" },
+          { text: "Migration", link: "/migration" },
           { text: "API", link: "/api" },
           { text: "Sharp Adapter", link: "/sharp" },
           { text: "Compatibility", link: "/compatibility" },

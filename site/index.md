@@ -7,6 +7,7 @@
   </p>
   <div class="bmp-actions">
     <a class="vp-button brand" href="/quickstart">Quickstart</a>
+    <a class="vp-button alt" href="/migration">Migration</a>
     <a class="vp-button alt" href="/api">API Reference</a>
     <a class="vp-button alt" href="https://github.com/Huh-David/bmp-js">GitHub</a>
   </div>
