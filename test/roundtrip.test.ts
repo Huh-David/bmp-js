@@ -1,12 +1,33 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { decode, encode } from "../src/index";
 
 const fixturesDir = join(process.cwd(), "fixtures");
-const fixtureFiles = readdirSync(fixturesDir)
-  .filter((file) => file.endsWith(".bmp") && !file.endsWith("_out.bmp"))
+
+function collectBmpFiles(dir: string, acc: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const fullPath = join(dir, entry);
+    const stat = statSync(fullPath);
+    if (stat.isDirectory()) {
+      collectBmpFiles(fullPath, acc);
+      continue;
+    }
+
+    if (!entry.endsWith(".bmp")) {
+      continue;
+    }
+
+    const rel = relative(fixturesDir, fullPath).split(sep).join("/");
+    acc.push(rel);
+  }
+
+  return acc;
+}
+
+const fixtureFiles = collectBmpFiles(fixturesDir)
+  .filter((file) => !file.endsWith("_out.bmp") && !file.startsWith("generated-invalid/"))
   .sort();
 
 describe("BMP fixtures", () => {
