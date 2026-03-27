@@ -9,9 +9,12 @@ import type {
   DecodeForSharpInput,
   DecodedSharpInput,
   EncodeBmpOptions,
+  PixelSource,
   SharpInstance,
+  SharpFromBmpOptions,
   SharpModule,
   SharpRawDescriptor,
+  SharpRawFlatLike,
   SharpRawInfo,
   SharpRawLike,
 } from "./types";
@@ -20,9 +23,9 @@ const require = createRequire(
   typeof __filename === "string" ? __filename : `${process.cwd()}/package.json`,
 );
 
-function toUint8Array(input: DecodeForSharpInput | BmpSharpInput): Uint8Array {
-  if (input instanceof Uint8Array) {
-    return input;
+function toUint8Array(input: PixelSource): Uint8Array {
+  if (ArrayBuffer.isView(input)) {
+    return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
   }
 
   return new Uint8Array(input);
@@ -90,9 +93,105 @@ function normalizeBitDepth(
   return channels === 4 ? 32 : 24;
 }
 
-export function isBmp(input: BmpSharpInput): boolean {
+function normalizeSharpFromBmpArgs(
+  inputOrOptions: DecodeForSharpInput | SharpFromBmpOptions,
+  sharpModule?: SharpModule,
+): { input: DecodeForSharpInput; sharpModule?: SharpModule } {
+  if (typeof inputOrOptions === "object" && inputOrOptions !== null && "input" in inputOrOptions) {
+    const options = inputOrOptions as SharpFromBmpOptions;
+    const resolvedSharpModule = sharpModule ?? options.sharp;
+
+    if (resolvedSharpModule) {
+      return {
+        input: options.input,
+        sharpModule: resolvedSharpModule,
+      };
+    }
+
+    return {
+      input: options.input,
+    };
+  }
+
+  if (sharpModule) {
+    return {
+      input: inputOrOptions as DecodeForSharpInput,
+      sharpModule,
+    };
+  }
+
+  return {
+    input: inputOrOptions as DecodeForSharpInput,
+  };
+}
+
+function normalizeEncodeFromSharpArgs(
+  inputOrData: SharpRawLike | SharpRawFlatLike | PixelSource,
+  infoOrOptions?: SharpRawInfo | EncodeBmpOptions,
+  maybeOptions?: EncodeBmpOptions,
+): { data: Uint8Array; info: SharpRawInfo; options: EncodeBmpOptions } {
+  if (
+    typeof inputOrData === "object" &&
+    inputOrData !== null &&
+    "data" in inputOrData &&
+    "info" in inputOrData
+  ) {
+    const payload = inputOrData as SharpRawLike;
+    return {
+      data: toUint8Array(payload.data),
+      info: payload.info,
+      options: (infoOrOptions as EncodeBmpOptions | undefined) ?? {},
+    };
+  }
+
+  if (
+    typeof inputOrData === "object" &&
+    inputOrData !== null &&
+    "data" in inputOrData &&
+    "width" in inputOrData &&
+    "height" in inputOrData &&
+    "channels" in inputOrData
+  ) {
+    const payload = inputOrData as SharpRawFlatLike;
+    const info: SharpRawInfo = {
+      width: payload.width,
+      height: payload.height,
+      channels: payload.channels,
+    };
+
+    if (payload.premultiplied !== undefined) {
+      info.premultiplied = payload.premultiplied;
+    }
+
+    return {
+      data: toUint8Array(payload.data),
+      info,
+      options: (infoOrOptions as EncodeBmpOptions | undefined) ?? {},
+    };
+  }
+
+  if (
+    typeof infoOrOptions === "object" &&
+    infoOrOptions !== null &&
+    "width" in infoOrOptions &&
+    "height" in infoOrOptions &&
+    "channels" in infoOrOptions
+  ) {
+    return {
+      data: toUint8Array(inputOrData as PixelSource),
+      info: infoOrOptions as SharpRawInfo,
+      options: maybeOptions ?? {},
+    };
+  }
+
+  throw new InvalidSharpRawInputError(
+    "Invalid encodeFromSharp input. Expected { data, info }, { data, width, height, channels }, or (data, info).",
+  );
+}
+
+export function isBmp(input: unknown): input is BmpSharpInput {
   try {
-    const bytes = toUint8Array(input);
+    const bytes = toUint8Array(input as BmpSharpInput);
     return bytes.length >= 2 && bytes[0] === 0x42 && bytes[1] === 0x4d;
   } catch {
     return false;
@@ -116,19 +215,29 @@ export function decodeForSharp(input: DecodeForSharpInput): DecodedSharpInput {
   return {
     data: decoded.data,
     raw,
+    info: raw,
     width: decoded.width,
     height: decoded.height,
     channels: 4,
   };
 }
 
+/**
+ * @deprecated Use decodeForSharp instead.
+ */
 export function toSharpInput(input: DecodeForSharpInput): DecodedSharpInput {
   return decodeForSharp(input);
 }
 
-export function sharpFromBmp(input: DecodeForSharpInput, sharpModule?: SharpModule): SharpInstance {
-  const decoded = decodeForSharp(input);
-  const sharp = loadSharpModule(sharpModule) as unknown as (
+export function sharpFromBmp(input: DecodeForSharpInput, sharpModule?: SharpModule): SharpInstance;
+export function sharpFromBmp(options: SharpFromBmpOptions): SharpInstance;
+export function sharpFromBmp(
+  inputOrOptions: DecodeForSharpInput | SharpFromBmpOptions,
+  sharpModule?: SharpModule,
+): SharpInstance {
+  const normalized = normalizeSharpFromBmpArgs(inputOrOptions, sharpModule);
+  const decoded = decodeForSharp(normalized.input);
+  const sharp = loadSharpModule(normalized.sharpModule) as unknown as (
     inputData: Uint8Array,
     options: { raw: SharpRawDescriptor },
   ) => SharpInstance;
@@ -136,11 +245,23 @@ export function sharpFromBmp(input: DecodeForSharpInput, sharpModule?: SharpModu
   return sharp(decoded.data, { raw: decoded.raw });
 }
 
-export function encodeFromSharp(input: SharpRawLike, options: EncodeBmpOptions = {}): Uint8Array {
-  const data = toUint8Array(input.data);
-  const width = input.info.width;
-  const height = input.info.height;
-  const channels = input.info.channels;
+export function encodeFromSharp(input: SharpRawLike, options?: EncodeBmpOptions): Uint8Array;
+export function encodeFromSharp(input: SharpRawFlatLike, options?: EncodeBmpOptions): Uint8Array;
+export function encodeFromSharp(
+  data: PixelSource,
+  info: SharpRawInfo,
+  options?: EncodeBmpOptions,
+): Uint8Array;
+export function encodeFromSharp(
+  inputOrData: SharpRawLike | SharpRawFlatLike | PixelSource,
+  infoOrOptions?: SharpRawInfo | EncodeBmpOptions,
+  maybeOptions?: EncodeBmpOptions,
+): Uint8Array {
+  const normalized = normalizeEncodeFromSharpArgs(inputOrData, infoOrOptions, maybeOptions);
+  const data = normalized.data;
+  const width = normalized.info.width;
+  const height = normalized.info.height;
+  const channels = normalized.info.channels;
 
   assertPositiveInteger("info.width", width);
   assertPositiveInteger("info.height", height);
@@ -158,14 +279,14 @@ export function encodeFromSharp(input: SharpRawLike, options: EncodeBmpOptions =
     );
   }
 
-  const bitDepth = normalizeBitDepth(channels, options.bitDepth);
+  const bitDepth = normalizeBitDepth(channels, normalized.options.bitDepth);
   const encodeOptions: EncodeOptions = {
     bitPP: bitDepth,
-    orientation: options.topDown ? "top-down" : "bottom-up",
+    orientation: normalized.options.topDown ? "top-down" : "bottom-up",
   };
 
-  if (options.palette) {
-    encodeOptions.palette = options.palette;
+  if (normalized.options.palette) {
+    encodeOptions.palette = normalized.options.palette;
   }
 
   return encode(
@@ -189,8 +310,11 @@ export type {
   DecodeForSharpInput,
   DecodedSharpInput,
   EncodeBmpOptions,
+  PixelSource,
   SharpInstance,
+  SharpFromBmpOptions,
   SharpModule,
+  SharpRawFlatLike,
   SharpRawDescriptor,
   SharpRawInfo,
   SharpRawLike,

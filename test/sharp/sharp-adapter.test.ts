@@ -74,6 +74,7 @@ describe("sharp adapter", () => {
     expect(decoded.height).toBe(decoded.raw.height);
     expect(decoded.channels).toBe(4);
     expect(decoded.raw.channels).toBe(4);
+    expect(decoded.info).toEqual(decoded.raw);
   });
 
   it("decodeForSharp returns RGBA data with expected length", () => {
@@ -95,6 +96,14 @@ describe("sharp adapter", () => {
     const fixture = readFileSync(join(fixturesDir, "bit24.bmp"));
     const sharp = sharpModule as typeof import("sharp");
     const png = await sharpFromBmp(fixture, sharp).resize(12, 12).png().toBuffer();
+
+    expect(Array.from(png.subarray(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  });
+
+  it.skipIf(!sharpModule)("sharpFromBmp supports options-object overload", async () => {
+    const fixture = readFileSync(join(fixturesDir, "bit24.bmp"));
+    const sharp = sharpModule as typeof import("sharp");
+    const png = await sharpFromBmp({ input: fixture, sharp }).resize(10, 10).png().toBuffer();
 
     expect(Array.from(png.subarray(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
   });
@@ -211,5 +220,23 @@ describe("sharp adapter", () => {
 
     expect(parseHeader(rgbBmp).bitPP).toBe(24);
     expect(parseHeader(rgbaBmp).bitPP).toBe(32);
+  });
+
+  it("encodeFromSharp supports positional and flat overloads", () => {
+    const data = new Uint8Array([
+      255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255,
+    ]);
+    const info = { width: 2, height: 2, channels: 4 as const };
+
+    const fromPositional = encodeFromSharp(data, info, { bitDepth: 32 });
+    const fromFlat = encodeFromSharp({
+      data,
+      width: info.width,
+      height: info.height,
+      channels: info.channels,
+    });
+
+    expect(parseHeader(fromPositional).bitPP).toBe(32);
+    expect(parseHeader(fromFlat).bitPP).toBe(32);
   });
 });

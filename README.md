@@ -139,6 +139,15 @@ Adapter behavior:
 - Sharp-bound decode output is normalized to `RGBA` + `{ raw: { width, height, channels: 4 } }`.
 - `encodeFromSharp` supports `channels` 3 and 4 only; other values throw.
 - Default encode depth is data-preserving: RGB -> 24-bit, RGBA -> 32-bit.
+- Inputs are `Uint8Array`-first and accept `Buffer`/`ArrayBuffer`/typed-array views.
+- `sharpFromBmp` supports both forms:
+  - `sharpFromBmp(input, sharp?)`
+  - `sharpFromBmp({ input, sharp })`
+- `encodeFromSharp` supports:
+  - `encodeFromSharp({ data, info }, options?)`
+  - `encodeFromSharp({ data, width, height, channels }, options?)`
+  - `encodeFromSharp(data, info, options?)`
+- `toSharpInput` is kept as a compatibility alias for `decodeForSharp`.
 
 ## Development
 
