@@ -46,6 +46,7 @@ class BmpDecoder implements DecodedBmp {
     this.view = new DataView(this.bytes.buffer, this.bytes.byteOffset, this.bytes.byteLength);
     this.options = {
       treat16BitAs15BitAlpha: options.treat16BitAs15BitAlpha ?? false,
+      toRGBA: options.toRGBA ?? false,
     };
 
     this.parseFileHeader();
@@ -53,6 +54,7 @@ class BmpDecoder implements DecodedBmp {
     this.parsePalette();
     this.pos = this.offset;
     this.parseRGBA();
+    this.transformToRgbaIfNeeded();
   }
 
   private ensureReadable(offset: number, size: number, context: string): void {
@@ -276,6 +278,24 @@ class BmpDecoder implements DecodedBmp {
     }
   }
 
+  private transformToRgbaIfNeeded(): void {
+    if (!this.options.toRGBA) {
+      return;
+    }
+
+    for (let i = 0; i < this.data.length; i += 4) {
+      const alpha = this.data[i] ?? 0;
+      const blue = this.data[i + 1] ?? 0;
+      const green = this.data[i + 2] ?? 0;
+      const red = this.data[i + 3] ?? 0;
+
+      this.data[i] = red;
+      this.data[i + 1] = green;
+      this.data[i + 2] = blue;
+      this.data[i + 3] = alpha;
+    }
+  }
+
   private getPaletteColor(index: number): BmpPaletteColor {
     const color = this.palette?.[index];
     if (color) {
@@ -313,7 +333,7 @@ class BmpDecoder implements DecodedBmp {
         const packed = this.readUInt8(rowStart + Math.floor(x / 8));
         const bit = (packed >> (7 - (x % 8))) & 0x01;
         const rgb = this.getPaletteColor(bit);
-        this.setPixel(destY, x, 0, rgb.blue, rgb.green, rgb.red);
+        this.setPixel(destY, x, 0xff, rgb.blue, rgb.green, rgb.red);
       }
     }
   }
@@ -336,7 +356,7 @@ class BmpDecoder implements DecodedBmp {
         const packed = this.readUInt8(rowStart + Math.floor(x / 2));
         const idx = x % 2 === 0 ? (packed & 0xf0) >> 4 : packed & 0x0f;
         const rgb = this.getPaletteColor(idx);
-        this.setPixel(destY, x, 0, rgb.blue, rgb.green, rgb.red);
+        this.setPixel(destY, x, 0xff, rgb.blue, rgb.green, rgb.red);
       }
     }
   }
@@ -358,7 +378,7 @@ class BmpDecoder implements DecodedBmp {
       for (let x = 0; x < this.width; x += 1) {
         const idx = this.readUInt8(rowStart + x);
         const rgb = this.getPaletteColor(idx);
-        this.setPixel(destY, x, 0, rgb.blue, rgb.green, rgb.red);
+        this.setPixel(destY, x, 0xff, rgb.blue, rgb.green, rgb.red);
       }
     }
   }
@@ -425,7 +445,7 @@ class BmpDecoder implements DecodedBmp {
         const blue = this.scaleMasked(value, this.maskBlue);
         const green = this.scaleMasked(value, this.maskGreen);
         const red = this.scaleMasked(value, this.maskRed);
-        const alpha = this.maskAlpha !== 0 ? this.scaleMasked(value, this.maskAlpha) : 0x00;
+        const alpha = this.maskAlpha !== 0 ? this.scaleMasked(value, this.maskAlpha) : 0xff;
         this.setPixel(destY, x, alpha, blue, green, red);
       }
     }
@@ -444,7 +464,7 @@ class BmpDecoder implements DecodedBmp {
         const blue = this.readUInt8(base);
         const green = this.readUInt8(base + 1);
         const red = this.readUInt8(base + 2);
-        this.setPixel(destY, x, 0, blue, green, red);
+        this.setPixel(destY, x, 0xff, blue, green, red);
       }
     }
   }
@@ -464,7 +484,7 @@ class BmpDecoder implements DecodedBmp {
           const red = this.scaleMasked(pixel, this.maskRed || 0x00ff0000);
           const green = this.scaleMasked(pixel, this.maskGreen || 0x0000ff00);
           const blue = this.scaleMasked(pixel, this.maskBlue || 0x000000ff);
-          const alpha = this.maskAlpha === 0 ? 0 : this.scaleMasked(pixel, this.maskAlpha);
+          const alpha = this.maskAlpha === 0 ? 0xff : this.scaleMasked(pixel, this.maskAlpha);
           this.setPixel(destY, x, alpha, blue, green, red);
         } else {
           const blue = this.readUInt8(base);
@@ -506,7 +526,7 @@ class BmpDecoder implements DecodedBmp {
           const idx = this.readUInt8();
           const rgb = this.getPaletteColor(idx);
           if (x < this.width && y >= 0 && y < this.height) {
-            this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+            this.setPixel(y, x, 0xff, rgb.blue, rgb.green, rgb.red);
           }
           x += 1;
         }
@@ -519,7 +539,7 @@ class BmpDecoder implements DecodedBmp {
       const rgb = this.getPaletteColor(value);
       for (let i = 0; i < count; i += 1) {
         if (x < this.width && y >= 0 && y < this.height) {
-          this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+          this.setPixel(y, x, 0xff, rgb.blue, rgb.green, rgb.red);
         }
         x += 1;
       }
@@ -556,7 +576,7 @@ class BmpDecoder implements DecodedBmp {
           const nibble = i % 2 === 0 ? (current & 0xf0) >> 4 : current & 0x0f;
           const rgb = this.getPaletteColor(nibble);
           if (x < this.width && y >= 0 && y < this.height) {
-            this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+            this.setPixel(y, x, 0xff, rgb.blue, rgb.green, rgb.red);
           }
           x += 1;
           if (i % 2 === 1 && i + 1 < value) {
@@ -573,7 +593,7 @@ class BmpDecoder implements DecodedBmp {
         const nibble = i % 2 === 0 ? (value & 0xf0) >> 4 : value & 0x0f;
         const rgb = this.getPaletteColor(nibble);
         if (x < this.width && y >= 0 && y < this.height) {
-          this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+          this.setPixel(y, x, 0xff, rgb.blue, rgb.green, rgb.red);
         }
         x += 1;
       }

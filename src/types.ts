@@ -20,6 +20,7 @@ export interface EncodeOptions {
 
 export interface DecodeOptions {
   treat16BitAs15BitAlpha?: boolean;
+  toRGBA?: boolean;
 }
 
 export interface EncodedBmp {
