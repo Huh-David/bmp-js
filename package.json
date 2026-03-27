@@ -72,7 +72,7 @@
     "pack:check": "npm pack --dry-run > /dev/null",
     "check": "pnpm format:check && pnpm lint && pnpm fixtures:validate && pnpm typecheck && pnpm test && pnpm pack:check",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && oxfmt --write CHANGELOG.md",
     "release": "changeset publish",
     "prepack": "pnpm clean && pnpm build"
   },

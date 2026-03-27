@@ -7,7 +7,6 @@
 - 658e197: Improve the optional `@huh-david/bmp-js/sharp` adapter ergonomics with better input typing and non-breaking overloads.
 
   Changes include:
-
   - `isBmp` now acts as a type guard over adapter input sources.
   - Added overload-friendly forms for `sharpFromBmp` and `encodeFromSharp`.
   - Added `info` alias on `decodeForSharp` output for sharper API consistency.
@@ -20,7 +19,6 @@
 - 88c34f1: Add an official optional Sharp adapter subexport at `@huh-david/bmp-js/sharp`.
 
   The adapter adds:
-
   - `isBmp(input)` signature checks
   - `decodeForSharp(input)` / `toSharpInput(input)` RGBA+raw decoding helpers
   - `sharpFromBmp(input, sharpModule?)` direct Sharp instance creation
