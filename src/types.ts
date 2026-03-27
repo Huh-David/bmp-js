@@ -25,6 +25,8 @@ export interface DecodeOptions {
   toRGBA?: boolean;
 }
 
+export type DecodeColorOptions = Omit<DecodeOptions, "toRGBA">;
+
 export interface EncodedBmp {
   data: Uint8Array;
   width: number;
@@ -49,4 +51,9 @@ export interface DecodedBmp {
   palette?: BmpPaletteColor[];
   data: Uint8Array;
   getData(): Uint8Array;
+}
+
+export interface DecodedRgb extends BmpImageData {
+  channels: 3;
+  format: "rgb";
 }

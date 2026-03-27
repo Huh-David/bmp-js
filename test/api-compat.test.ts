@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { decode, encode } from "../src/index";
+import { decode, decodeRgb, decodeRgba, encode } from "../src/index";
 import {
   decodeForSharp,
   encodeFromSharp,
@@ -21,6 +21,8 @@ const distSharpCjs = resolve(process.cwd(), "dist/sharp/index.cjs");
 describe("API compatibility", () => {
   it("keeps source exports stable", () => {
     expect(typeof decode).toBe("function");
+    expect(typeof decodeRgba).toBe("function");
+    expect(typeof decodeRgb).toBe("function");
     expect(typeof encode).toBe("function");
     expect(typeof isBmp).toBe("function");
     expect(typeof decodeForSharp).toBe("function");
@@ -34,6 +36,8 @@ describe("API compatibility", () => {
     const mod = require(distCjs);
 
     expect(typeof mod.decode).toBe("function");
+    expect(typeof mod.decodeRgba).toBe("function");
+    expect(typeof mod.decodeRgb).toBe("function");
     expect(typeof mod.encode).toBe("function");
   });
 
@@ -41,7 +45,11 @@ describe("API compatibility", () => {
     const mod = await import(pathToFileURL(distEsm).href);
 
     expect(typeof mod.decode).toBe("function");
+    expect(typeof mod.decodeRgba).toBe("function");
+    expect(typeof mod.decodeRgb).toBe("function");
     expect(typeof mod.encode).toBe("function");
+    expect(typeof mod.default.decodeRgba).toBe("function");
+    expect(typeof mod.default.decodeRgb).toBe("function");
     expect(typeof mod.default.decode).toBe("function");
     expect(typeof mod.default.encode).toBe("function");
   });
