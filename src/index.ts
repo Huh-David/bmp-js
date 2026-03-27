@@ -3,6 +3,7 @@ import { encode } from "./encoder";
 
 export type {
   BmpBinaryInput,
+  EncodeBitDepth,
   BmpImageData,
   BmpPaletteColor,
   DecodeOptions,

@@ -58,6 +58,11 @@
     "typecheck": "tsc --project tsconfig.json --noEmit && tsc --project tsconfig.test.json --noEmit",
     "fixtures:generate": "node scripts/generate-bmp-fixtures.mjs",
     "fixtures:validate": "node scripts/validate-fixture-provenance.mjs",
+    "docs:api": "rimraf site/api/reference && typedoc --options typedoc.json",
+    "docs:dev": "pnpm docs:api && vitepress dev site",
+    "docs:build": "pnpm docs:api && vitepress build site",
+    "docs:preview": "vitepress preview site",
+    "docs:check": "pnpm docs:build",
     "pack:check": "npm pack --dry-run > /dev/null",
     "check": "pnpm format:check && pnpm lint && pnpm fixtures:validate && pnpm typecheck && pnpm test && pnpm pack:check",
     "changeset": "changeset",
@@ -72,7 +77,10 @@
     "oxlint": "^1.57.0",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.1",
+    "typedoc": "^0.28.14",
+    "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "^5.9.3",
+    "vitepress": "^1.6.3",
     "vitest": "^3.2.4"
   },
   "engines": {

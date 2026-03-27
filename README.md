@@ -1,5 +1,8 @@
 # @huh-david/bmp-js
 
+[![npm version](https://img.shields.io/npm/v/%40huh-david%2Fbmp-js)](https://www.npmjs.com/package/@huh-david/bmp-js)
+[![Documentation](https://img.shields.io/badge/docs-github%20pages-1d4ed8)](https://huh-david.github.io/bmp-js/)
+
 A pure TypeScript BMP encoder/decoder for Node.js.
 
 ## Maintenance
@@ -7,7 +10,8 @@ A pure TypeScript BMP encoder/decoder for Node.js.
 This fork is actively maintained and tracks unresolved upstream `shaozilee/bmp-js` issues and PRs.
 
 - Repository: https://github.com/Huh-David/bmp-js
-- Latest release: https://github.com/Huh-David/bmp-js/releases/tag/v0.4.0
+- Releases: https://github.com/Huh-David/bmp-js/releases
+- Documentation: https://huh-david.github.io/bmp-js/
 
 ## Features
 
