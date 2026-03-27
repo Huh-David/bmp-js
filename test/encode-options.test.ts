@@ -51,18 +51,32 @@ describe("encode options", () => {
     }
   });
 
-  it("rejects unsupported encode bit depths", () => {
+  it("supports 32-bit encode and rejects unsupported bit depths", () => {
     const width = 2;
     const height = 2;
     const data = makePattern(width, height);
 
     expect(() => encode({ width, height, data }, { bitPP: 24 })).not.toThrow();
+    expect(() => encode({ width, height, data }, { bitPP: 32 })).not.toThrow();
     expect(() =>
-      encode({ width, height, data }, { bitPP: 32 as unknown as 24, orientation: "top-down" }),
+      encode({ width, height, data }, { bitPP: 12 as unknown as 24, orientation: "top-down" }),
     ).toThrow(/unsupported encode bit depth/i);
   });
 
   it("throws on too-short ABGR input", () => {
     expect(() => encode({ width: 2, height: 2, data: new Uint8Array(3) })).toThrow(/too short/i);
+  });
+
+  it("requires palette for 4/8-bit encode", () => {
+    const width = 2;
+    const height = 2;
+    const data = makePattern(width, height);
+
+    expect(() => encode({ width, height, data }, { bitPP: 4 })).toThrow(
+      /requires a non-empty palette/i,
+    );
+    expect(() => encode({ width, height, data }, { bitPP: 8 })).toThrow(
+      /requires a non-empty palette/i,
+    );
   });
 });

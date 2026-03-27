@@ -47,10 +47,11 @@ Track open upstream bugs/features and ensure this fork covers at least the same 
 ### Issue #10 - 1-bit encode/decode error
 
 - Upstream: https://github.com/jimp-dev/bmp-ts/issues/10
-- Status in this fork: **partially covered**
+- Status in this fork: **fixed in code, pending release**
 - Notes:
 - Decode side is covered for 1-bit.
-- Encode side still only supports 24-bit output in this fork today.
+- Encoder now supports `1/4/8/16/24/32` output with palette support for palettized modes.
+- Added test matrix in `test/encode-bit-depths.test.ts`.
 
 ## Open upstream PRs (status mapping)
 
@@ -70,7 +71,7 @@ Track open upstream bugs/features and ensure this fork covers at least the same 
 
 ## Remaining compatibility gap vs bmp-ts
 
-- [ ] Add encode output support beyond 24-bit (`1/4/8/16/32`) with palette handling where required.
+- [ ] None in code at the moment; pending release publication and upstream issue updates.
 
 ## Upstream comment policy
 
