@@ -26,12 +26,13 @@ Sources:
   - Added `test/browser/smoke.browser.test.ts` for browser encode/decode runtime checks.
   - CI now includes a dedicated `browser-smoke` job.
 
-- [ ] Release and announce bmp-ts encode parity (`1/4/8/16/24/32`) upstream after publish.
+- [x] Release and announce bmp-ts encode parity (`1/4/8/16/24/32`) upstream after publish.
   - Upstream refs:
   - Issue: https://github.com/jimp-dev/bmp-ts/issues/10
   - Notes:
   - Implementation and tests are complete in this fork.
-  - Upstream comment should be posted only after the release is live.
+  - Upstream comment posted after release went live:
+    - https://github.com/jimp-dev/bmp-ts/issues/10#issuecomment-4144267539
 
 ## Upstream communication
 
