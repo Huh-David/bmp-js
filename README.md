@@ -161,6 +161,7 @@ Useful scripts:
 
 - `pnpm build`
 - `pnpm test`
+- `pnpm test:browser`
 - `pnpm test:watch`
 - `pnpm lint`
 - `pnpm format`

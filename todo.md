@@ -16,12 +16,14 @@ Sources:
   - Current fork keeps `ABGR` for compatibility and documents it clearly.
   - Future option should be explicit and non-breaking.
 
-- [ ] Add browser runtime smoke tests (e.g. `vitest --browser` or bundled example) for decode/encode paths.
+- [x] Add browser runtime smoke tests (e.g. `vitest --browser` or bundled example) for decode/encode paths.
   - Upstream refs:
   - PR: https://github.com/shaozilee/bmp-js/pull/37
   - Notes:
   - Core implementation is `Uint8Array`/`DataView` based.
-  - We still need explicit CI/browser verification beyond Node-only tests.
+  - Added `test:browser` with Vitest Browser Mode + Playwright Chromium.
+  - Added `test/browser/smoke.browser.test.ts` for browser encode/decode runtime checks.
+  - CI now includes a dedicated `browser-smoke` job.
 
 - [ ] Release and announce bmp-ts encode parity (`1/4/8/16/24/32`) upstream after publish.
   - Upstream refs:
