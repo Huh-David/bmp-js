@@ -32,8 +32,10 @@ Always ensure these pass locally:
 
 - `pnpm format:check`
 - `pnpm lint`
+- `pnpm fixtures:validate`
 - `pnpm typecheck`
 - `pnpm test`
+- `pnpm pack:check`
 
 The canonical command is:
 
@@ -52,6 +54,7 @@ The canonical command is:
 
 - Add or update tests for any behavior change.
 - Keep fixture-based coverage for bit depths and RLE cases.
+- Keep fixture provenance metadata updated in `docs/fixture-provenance.json`.
 - If decoding/encoding behavior changes intentionally, update snapshots in:
   - `test/__snapshots__/roundtrip.test.ts.snap`
 

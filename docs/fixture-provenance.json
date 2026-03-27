@@ -1,0 +1,192 @@
+[
+  {
+    "path": "fixtures/bit1.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_565.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_565_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_a444.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_a444_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_a555.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_a555_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_x444.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_x444_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_x555.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit16_x555_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit1_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit24.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit24_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit32.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit32_alpha.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit32_alpha_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit32_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit4.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit4_RLE.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit4_RLE_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit4_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit8.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit8_RLE.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit8_RLE_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/bit8_out.bmp",
+    "sourceId": "upstream_bmp_js_fixtures",
+    "status": "temporary-needs-license-review"
+  },
+  {
+    "path": "fixtures/generated-invalid/invalid-bad-magic.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated-invalid/invalid-dib-size.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated-invalid/invalid-offset-out-of-range.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated-invalid/invalid-truncated-header.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated-invalid/invalid-truncated-pixels.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-info-bottomup-3x2.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-info-topdown-3x2.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-os2-core-2x2.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-pal8-3x2.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-rle8-4x2.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-v4-oddwidth-5x1.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  },
+  {
+    "path": "fixtures/generated/valid-v5-2x2.bmp",
+    "sourceId": "internal_generated",
+    "status": "verified-generated"
+  }
+]

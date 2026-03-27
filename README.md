@@ -6,7 +6,8 @@ A pure TypeScript BMP encoder/decoder for Node.js.
 
 - Decoding for BMP bit depths: 1, 4, 8, 15, 16, 24, 32
 - Decoding support for RLE-4 and RLE-8 compressed BMPs
-- Encoding output as 24-bit BMP
+- Robust DIB handling for CORE/INFO/V4/V5 headers
+- Encoding output as 24-bit BMP with configurable orientation
 - Dual package output: ESM + CommonJS
 - First-class TypeScript types
 
@@ -36,6 +37,24 @@ const encoded = encode({
 writeFileSync("./roundtrip.bmp", encoded.data);
 ```
 
+### Encode options
+
+```ts
+import { encode } from "@huh-david/bmp-js";
+
+const encoded = encode(
+  {
+    data: rgbaLikeBytes,
+    width: 320,
+    height: 200,
+  },
+  {
+    orientation: "bottom-up", // default: "top-down"
+    bitPP: 24, // only 24 is currently supported
+  },
+);
+```
+
 ### CommonJS
 
 ```js
@@ -57,10 +76,13 @@ Decoded pixel data is a byte buffer in `ABGR` order.
 - `G`: green
 - `R`: red
 
+Input/output binary types use `Uint8Array` (Node `Buffer` is fully compatible because it extends `Uint8Array`).
+
 ## Development
 
 ```bash
 pnpm install
+pnpm fixtures:generate
 pnpm check
 ```
 

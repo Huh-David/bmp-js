@@ -5,14 +5,25 @@ export interface BmpPaletteColor {
   quad: number;
 }
 
+export type BmpBinaryInput = ArrayBuffer | ArrayBufferView;
+
 export interface BmpImageData {
-  data: Buffer;
+  data: Uint8Array;
   width: number;
   height: number;
 }
 
+export interface EncodeOptions {
+  orientation?: "top-down" | "bottom-up";
+  bitPP?: 24;
+}
+
+export interface DecodeOptions {
+  treat16BitAs15BitAlpha?: boolean;
+}
+
 export interface EncodedBmp {
-  data: Buffer;
+  data: Uint8Array;
   width: number;
   height: number;
 }
@@ -33,6 +44,6 @@ export interface DecodedBmp {
   colors: number;
   importantColors: number;
   palette?: BmpPaletteColor[];
-  data: Buffer;
-  getData(): Buffer;
+  data: Uint8Array;
+  getData(): Uint8Array;
 }

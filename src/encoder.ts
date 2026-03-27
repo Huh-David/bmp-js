@@ -1,97 +1,114 @@
-import type { BmpImageData, EncodedBmp } from "./types";
+import { assertInteger } from "./binary";
+import type { BmpImageData, EncodeOptions, EncodedBmp } from "./types";
 
-class BmpEncoder {
-  private readonly buffer: Buffer;
-  private readonly width: number;
-  private readonly height: number;
-  private readonly extraBytes: number;
-  private readonly rgbSize: number;
-  private readonly headerInfoSize: number;
+const FILE_HEADER_SIZE = 14;
+const INFO_HEADER_SIZE = 40;
+const RGB_TRIPLE_SIZE = 3;
+const BYTES_PER_PIXEL_ABGR = 4;
 
-  private readonly flag = "BM";
-  private readonly reserved = 0;
-  private readonly offset = 54;
-  private readonly fileSize: number;
-  private readonly planes = 1;
-  private readonly bitPP = 24;
-  private readonly compress = 0;
-  private readonly hr = 0;
-  private readonly vr = 0;
-  private readonly colors = 0;
-  private readonly importantColors = 0;
+function rowStride24(width: number): number {
+  const raw = width * RGB_TRIPLE_SIZE;
+  return (raw + 3) & ~3;
+}
 
-  private pos = 0;
-
-  constructor(imgData: BmpImageData) {
-    this.buffer = imgData.data;
-    this.width = imgData.width;
-    this.height = imgData.height;
-    this.extraBytes = this.width % 4;
-    this.rgbSize = this.height * (3 * this.width + this.extraBytes);
-    this.headerInfoSize = 40;
-    this.fileSize = this.rgbSize + this.offset;
+function normalizeEncodeOptions(
+  qualityOrOptions?: number | EncodeOptions,
+): Required<EncodeOptions> {
+  if (typeof qualityOrOptions === "number" || typeof qualityOrOptions === "undefined") {
+    return {
+      orientation: "top-down",
+      bitPP: 24,
+    };
   }
 
-  encode(): Buffer {
-    const tempBuffer = Buffer.alloc(this.offset + this.rgbSize);
+  return {
+    orientation: qualityOrOptions.orientation ?? "top-down",
+    bitPP: qualityOrOptions.bitPP ?? 24,
+  };
+}
 
-    tempBuffer.write(this.flag, this.pos, 2);
-    this.pos += 2;
-    tempBuffer.writeUInt32LE(this.fileSize, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.reserved, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.offset, this.pos);
-    this.pos += 4;
+class BmpEncoder {
+  private readonly pixelData: Uint8Array;
+  private readonly width: number;
+  private readonly height: number;
+  private readonly options: Required<EncodeOptions>;
 
-    tempBuffer.writeUInt32LE(this.headerInfoSize, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.width, this.pos);
-    this.pos += 4;
-    tempBuffer.writeInt32LE(-this.height, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt16LE(this.planes, this.pos);
-    this.pos += 2;
-    tempBuffer.writeUInt16LE(this.bitPP, this.pos);
-    this.pos += 2;
-    tempBuffer.writeUInt32LE(this.compress, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.rgbSize, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.hr, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.vr, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.colors, this.pos);
-    this.pos += 4;
-    tempBuffer.writeUInt32LE(this.importantColors, this.pos);
-    this.pos += 4;
+  constructor(imgData: BmpImageData, options: Required<EncodeOptions>) {
+    this.pixelData = imgData.data;
+    this.width = imgData.width;
+    this.height = imgData.height;
+    this.options = options;
 
-    let i = 0;
-    const rowBytes = 3 * this.width + this.extraBytes;
+    assertInteger("width", this.width);
+    assertInteger("height", this.height);
 
-    for (let y = 0; y < this.height; y += 1) {
+    if (this.options.bitPP !== 24) {
+      throw new Error(
+        `Unsupported encode bit depth: ${this.options.bitPP}. Only 24-bit output is supported.`,
+      );
+    }
+
+    const minLength = this.width * this.height * BYTES_PER_PIXEL_ABGR;
+    if (this.pixelData.length < minLength) {
+      throw new Error(
+        `Image data is too short: expected at least ${minLength} bytes for ${this.width}x${this.height} ABGR data.`,
+      );
+    }
+  }
+
+  encode(): Uint8Array {
+    const stride = rowStride24(this.width);
+    const imageSize = stride * this.height;
+    const offset = FILE_HEADER_SIZE + INFO_HEADER_SIZE;
+    const totalSize = offset + imageSize;
+    const output = new Uint8Array(totalSize);
+    const view = new DataView(output.buffer, output.byteOffset, output.byteLength);
+
+    // BITMAPFILEHEADER
+    output[0] = 0x42; // B
+    output[1] = 0x4d; // M
+    view.setUint32(2, totalSize, true);
+    view.setUint32(6, 0, true);
+    view.setUint32(10, offset, true);
+
+    // BITMAPINFOHEADER
+    view.setUint32(14, INFO_HEADER_SIZE, true);
+    view.setInt32(18, this.width, true);
+    const signedHeight = this.options.orientation === "top-down" ? -this.height : this.height;
+    view.setInt32(22, signedHeight, true);
+    view.setUint16(26, 1, true);
+    view.setUint16(28, 24, true);
+    view.setUint32(30, 0, true);
+    view.setUint32(34, imageSize, true);
+    view.setUint32(38, 0, true);
+    view.setUint32(42, 0, true);
+    view.setUint32(46, 0, true);
+    view.setUint32(50, 0, true);
+
+    for (let fileRow = 0; fileRow < this.height; fileRow += 1) {
+      const srcY = this.options.orientation === "top-down" ? fileRow : this.height - 1 - fileRow;
+      const rowStart = offset + fileRow * stride;
+
       for (let x = 0; x < this.width; x += 1) {
-        const p = this.pos + y * rowBytes + x * 3;
-        i += 1; // skip alpha from ABGR
-        tempBuffer[p] = this.buffer.readUInt8(i++); // blue
-        tempBuffer[p + 1] = this.buffer.readUInt8(i++); // green
-        tempBuffer[p + 2] = this.buffer.readUInt8(i++); // red
-      }
+        const source = (srcY * this.width + x) * BYTES_PER_PIXEL_ABGR;
+        const target = rowStart + x * RGB_TRIPLE_SIZE;
 
-      if (this.extraBytes > 0) {
-        const fillOffset = this.pos + y * rowBytes + this.width * 3;
-        tempBuffer.fill(0, fillOffset, fillOffset + this.extraBytes);
+        output[target] = this.pixelData[source + 1] ?? 0; // B
+        output[target + 1] = this.pixelData[source + 2] ?? 0; // G
+        output[target + 2] = this.pixelData[source + 3] ?? 0; // R
       }
     }
 
-    return tempBuffer;
+    return output;
   }
 }
 
-export function encode(imgData: BmpImageData, quality = 100): EncodedBmp {
-  void quality;
-  const encoder = new BmpEncoder(imgData);
+export function encode(
+  imgData: BmpImageData,
+  qualityOrOptions?: number | EncodeOptions,
+): EncodedBmp {
+  const options = normalizeEncodeOptions(qualityOrOptions);
+  const encoder = new BmpEncoder(imgData, options);
   const data = encoder.encode();
 
   return {
