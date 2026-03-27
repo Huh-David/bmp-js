@@ -7,7 +7,7 @@ A pure TypeScript BMP encoder/decoder for Node.js.
 This fork is actively maintained and tracks unresolved upstream `shaozilee/bmp-js` issues and PRs.
 
 - Repository: https://github.com/Huh-David/bmp-js
-- Latest release: https://github.com/Huh-David/bmp-js/releases/tag/v0.4.0
+- Releases: https://github.com/Huh-David/bmp-js/releases
 
 ## Features
 
