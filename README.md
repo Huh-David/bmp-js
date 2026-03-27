@@ -28,6 +28,18 @@ This fork is actively maintained and tracks unresolved upstream `shaozilee/bmp-j
 pnpm add @huh-david/bmp-js
 ```
 
+## Migration
+
+Migrating from legacy `bmp-js`/`bmp-ts` is straightforward:
+
+```bash
+pnpm remove bmp-js bmp-ts
+pnpm add @huh-david/bmp-js
+```
+
+- Migration guide: https://huh-david.github.io/bmp-js/migration
+- AI migration prompt: [docs/ai-migration-prompt.md](docs/ai-migration-prompt.md)
+
 ## Usage
 
 ### ESM
