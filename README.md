@@ -74,9 +74,20 @@ const encoded = bmp.encode(decoded);
 fs.writeFileSync("./roundtrip.bmp", encoded.data);
 ```
 
+### Decode options
+
+```ts
+import { decode } from "@huh-david/bmp-js";
+
+const decoded = decode(inputBytes, {
+  toRGBA: true, // return RGBA instead of default ABGR
+});
+```
+
 ## Data layout
 
-Decoded pixel data is a byte buffer in `ABGR` order.
+Decoded pixel data is a byte buffer in `ABGR` order by default.
+If `toRGBA: true` is provided to `decode`, output is returned in `RGBA`.
 
 - `A`: alpha
 - `B`: blue
