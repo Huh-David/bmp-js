@@ -11,7 +11,7 @@
     "image",
     "typescript"
   ],
-  "homepage": "https://github.com/Huh-David/bmp-js#readme",
+  "homepage": "https://huh-david.github.io/bmp-js/",
   "bugs": {
     "url": "https://github.com/Huh-David/bmp-js/issues"
   },
@@ -40,6 +40,12 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs",
       "default": "./dist/index.js"
+    },
+    "./sharp": {
+      "types": "./dist/sharp/index.d.ts",
+      "import": "./dist/sharp/index.js",
+      "require": "./dist/sharp/index.cjs",
+      "default": "./dist/sharp/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -76,12 +82,21 @@
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
     "rimraf": "^6.0.1",
+    "sharp": "^0.33.5",
     "tsup": "^8.5.1",
     "typedoc": "^0.28.14",
     "typedoc-plugin-markdown": "^4.9.0",
     "typescript": "^5.9.3",
     "vitepress": "^1.6.3",
     "vitest": "^3.2.4"
+  },
+  "peerDependencies": {
+    "sharp": "^0.33.5"
+  },
+  "peerDependenciesMeta": {
+    "sharp": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=22"

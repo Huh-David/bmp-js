@@ -1,11 +1,10 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: ["src/index.ts", "src/sharp/index.ts"],
   tsconfig: "tsconfig.build.json",
   format: ["esm", "cjs"],
   dts: {
-    entry: "src/index.ts",
     resolve: true,
   },
   sourcemap: true,
