@@ -14,7 +14,7 @@ This fork is actively maintained and tracks unresolved upstream `shaozilee/bmp-j
 - Decoding for BMP bit depths: 1, 4, 8, 15, 16, 24, 32
 - Decoding support for RLE-4 and RLE-8 compressed BMPs
 - Robust DIB handling for CORE/INFO/V4/V5 headers
-- Encoding output as 24-bit BMP with configurable orientation
+- Encoding output bit depths: 1, 4, 8, 16, 24, 32
 - Dual package output: ESM + CommonJS
 - First-class TypeScript types
 
@@ -57,7 +57,9 @@ const encoded = encode(
   },
   {
     orientation: "bottom-up", // default: "top-down"
-    bitPP: 24, // only 24 is currently supported
+    bitPP: 32, // supported: 1, 4, 8, 16, 24, 32
+    // palette is required for 4/8-bit and optional for 1-bit
+    // palette: [{ red: 0, green: 0, blue: 0, quad: 0 }, ...],
   },
 );
 ```

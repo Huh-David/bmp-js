@@ -23,12 +23,12 @@ Sources:
   - Core implementation is `Uint8Array`/`DataView` based.
   - We still need explicit CI/browser verification beyond Node-only tests.
 
-- [ ] Reach bmp-ts encode parity for output bit depths (`1/4/8/16/24/32`) with palette support where required.
+- [ ] Release and announce bmp-ts encode parity (`1/4/8/16/24/32`) upstream after publish.
   - Upstream refs:
   - Issue: https://github.com/jimp-dev/bmp-ts/issues/10
   - Notes:
-  - Decode parity is already broad.
-  - Encode currently supports 24-bit output only.
+  - Implementation and tests are complete in this fork.
+  - Upstream comment should be posted only after the release is live.
 
 ## Upstream communication
 

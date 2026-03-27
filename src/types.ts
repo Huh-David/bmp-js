@@ -6,6 +6,7 @@ export interface BmpPaletteColor {
 }
 
 export type BmpBinaryInput = ArrayBuffer | ArrayBufferView;
+export type EncodeBitDepth = 1 | 4 | 8 | 16 | 24 | 32;
 
 export interface BmpImageData {
   data: Uint8Array;
@@ -15,7 +16,8 @@ export interface BmpImageData {
 
 export interface EncodeOptions {
   orientation?: "top-down" | "bottom-up";
-  bitPP?: 24;
+  bitPP?: EncodeBitDepth;
+  palette?: BmpPaletteColor[];
 }
 
 export interface DecodeOptions {
