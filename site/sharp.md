@@ -33,10 +33,7 @@ const png = await sharpFromBmp(bmpBytes, sharp).resize(800).png().toBuffer();
 import sharp from "sharp";
 import { encodeFromSharp } from "@huh-david/bmp-js/sharp";
 
-const { data, info } = await sharp(input)
-  .ensureAlpha()
-  .raw()
-  .toBuffer({ resolveWithObject: true });
+const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
 const bmp = encodeFromSharp({ data, info }, { bitDepth: 32 });
 ```
