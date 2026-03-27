@@ -7,7 +7,6 @@
 - 88c34f1: Add an official optional Sharp adapter subexport at `@huh-david/bmp-js/sharp`.
 
   The adapter adds:
-
   - `isBmp(input)` signature checks
   - `decodeForSharp(input)` / `toSharpInput(input)` RGBA+raw decoding helpers
   - `sharpFromBmp(input, sharpModule?)` direct Sharp instance creation

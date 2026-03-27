@@ -14,9 +14,12 @@ pnpm add sharp
 
 - `isBmp(input)`
 - `decodeForSharp(input)`
-- `toSharpInput(input)` (alias of `decodeForSharp`)
+- `toSharpInput(input)` (compatibility alias of `decodeForSharp`)
 - `sharpFromBmp(input, sharpModule?)`
+- `sharpFromBmp({ input, sharp })`
 - `encodeFromSharp({ data, info }, options?)`
+- `encodeFromSharp({ data, width, height, channels }, options?)`
+- `encodeFromSharp(data, info, options?)`
 
 ## BMP -> Sharp -> PNG
 
@@ -41,6 +44,7 @@ const bmp = encodeFromSharp({ data, info }, { bitDepth: 32 });
 ## Behavior
 
 - Adapter decode output is normalized to `RGBA` and `raw.channels = 4`.
+- `decodeForSharp` returns `raw` and `info` aliases for Sharp ergonomics.
 - `encodeFromSharp` supports `channels` `3` and `4` only.
 - Default encode depth is data-preserving:
   - `channels=3` -> `24-bit`
