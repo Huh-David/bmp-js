@@ -1,15 +1,28 @@
-import type { BmpPaletteColor, DecodedBmp } from "./types";
+import { toUint8Array } from "./binary";
+import type { BmpBinaryInput, BmpPaletteColor, DecodeOptions, DecodedBmp } from "./types";
+
+const FILE_HEADER_SIZE = 14;
+const INFO_HEADER_MIN = 40;
+const CORE_HEADER_SIZE = 12;
+
+function rowStride(width: number, bitPP: number): number {
+  return Math.floor((bitPP * width + 31) / 32) * 4;
+}
 
 class BmpDecoder implements DecodedBmp {
   private pos = 0;
-  private readonly buffer: Buffer;
-  private readonly isWithAlpha: boolean;
+  private readonly bytes: Uint8Array;
+  private readonly view: DataView;
+  private readonly options: Required<DecodeOptions>;
   private bottomUp = true;
+  private dibStart = FILE_HEADER_SIZE;
+  private paletteEntrySize = 4;
+  private externalMaskOffset = 0;
 
   private maskRed = 0;
   private maskGreen = 0;
   private maskBlue = 0;
-  private mask0 = 0;
+  private maskAlpha = 0;
 
   fileSize!: number;
   reserved!: number;
@@ -26,76 +39,215 @@ class BmpDecoder implements DecodedBmp {
   colors!: number;
   importantColors!: number;
   palette?: BmpPaletteColor[];
-  data!: Buffer;
+  data!: Uint8Array;
 
-  constructor(buffer: Buffer, isWithAlpha = false) {
-    this.buffer = buffer;
-    this.isWithAlpha = isWithAlpha;
+  constructor(input: BmpBinaryInput, options: DecodeOptions = {}) {
+    this.bytes = toUint8Array(input);
+    this.view = new DataView(this.bytes.buffer, this.bytes.byteOffset, this.bytes.byteLength);
+    this.options = {
+      treat16BitAs15BitAlpha: options.treat16BitAs15BitAlpha ?? false,
+    };
 
-    const flag = this.buffer.toString("utf-8", 0, (this.pos += 2));
-    if (flag !== "BM") {
-      throw new Error("Invalid BMP File");
-    }
-
-    this.parseHeader();
+    this.parseFileHeader();
+    this.parseDibHeader();
+    this.parsePalette();
+    this.pos = this.offset;
     this.parseRGBA();
   }
 
-  private parseHeader(): void {
-    this.fileSize = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.reserved = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.offset = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.headerSize = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.width = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.height = this.buffer.readInt32LE(this.pos);
-    this.pos += 4;
-    this.planes = this.buffer.readUInt16LE(this.pos);
-    this.pos += 2;
-    this.bitPP = this.buffer.readUInt16LE(this.pos);
-    this.pos += 2;
-    this.compress = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.rawSize = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.hr = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.vr = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.colors = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
-    this.importantColors = this.buffer.readUInt32LE(this.pos);
-    this.pos += 4;
+  private ensureReadable(offset: number, size: number, context: string): void {
+    if (offset < 0 || size < 0 || offset + size > this.bytes.length) {
+      throw new Error(`BMP decode out-of-range while reading ${context}`);
+    }
+  }
 
-    if (this.bitPP === 16 && this.isWithAlpha) {
-      this.bitPP = 15;
+  private readUInt8(offset = this.pos): number {
+    this.ensureReadable(offset, 1, "uint8");
+    if (offset === this.pos) this.pos += 1;
+    return this.view.getUint8(offset);
+  }
+
+  private readUInt16LE(offset = this.pos): number {
+    this.ensureReadable(offset, 2, "uint16");
+    if (offset === this.pos) this.pos += 2;
+    return this.view.getUint16(offset, true);
+  }
+
+  private readInt16LE(offset = this.pos): number {
+    this.ensureReadable(offset, 2, "int16");
+    if (offset === this.pos) this.pos += 2;
+    return this.view.getInt16(offset, true);
+  }
+
+  private readUInt32LE(offset = this.pos): number {
+    this.ensureReadable(offset, 4, "uint32");
+    if (offset === this.pos) this.pos += 4;
+    return this.view.getUint32(offset, true);
+  }
+
+  private readInt32LE(offset = this.pos): number {
+    this.ensureReadable(offset, 4, "int32");
+    if (offset === this.pos) this.pos += 4;
+    return this.view.getInt32(offset, true);
+  }
+
+  private parseFileHeader(): void {
+    this.ensureReadable(0, FILE_HEADER_SIZE, "file header");
+    if (this.bytes[0] !== 0x42 || this.bytes[1] !== 0x4d) {
+      throw new Error("Invalid BMP file signature");
     }
 
-    if (this.bitPP < 15) {
-      const len = this.colors === 0 ? 1 << this.bitPP : this.colors;
-      this.palette = new Array(len);
-      for (let i = 0; i < len; i += 1) {
-        const blue = this.buffer.readUInt8(this.pos++);
-        const green = this.buffer.readUInt8(this.pos++);
-        const red = this.buffer.readUInt8(this.pos++);
-        const quad = this.buffer.readUInt8(this.pos++);
-        this.palette[i] = { red, green, blue, quad };
-      }
+    this.pos = 2;
+    this.fileSize = this.readUInt32LE();
+    this.reserved = this.readUInt32LE();
+    this.offset = this.readUInt32LE();
+
+    if (this.offset < FILE_HEADER_SIZE || this.offset > this.bytes.length) {
+      throw new Error(`Invalid pixel data offset: ${this.offset}`);
     }
+  }
+
+  private parseDibHeader(): void {
+    this.pos = this.dibStart;
+    this.headerSize = this.readUInt32LE();
+    if (this.headerSize < CORE_HEADER_SIZE) {
+      throw new Error(`Unsupported DIB header size: ${this.headerSize}`);
+    }
+    this.ensureReadable(this.dibStart, this.headerSize, "DIB header");
+
+    if (this.headerSize === CORE_HEADER_SIZE) {
+      this.parseCoreHeader();
+      return;
+    }
+
+    if (this.headerSize < INFO_HEADER_MIN) {
+      throw new Error(`Unsupported DIB header size: ${this.headerSize}`);
+    }
+
+    this.parseInfoHeader();
+  }
+
+  private parseCoreHeader(): void {
+    const width = this.readUInt16LE(this.dibStart + 4);
+    const height = this.readUInt16LE(this.dibStart + 6);
+
+    this.width = width;
+    this.height = height;
+    this.planes = this.readUInt16LE(this.dibStart + 8);
+    this.bitPP = this.readUInt16LE(this.dibStart + 10);
+    this.compress = 0;
+    this.rawSize = 0;
+    this.hr = 0;
+    this.vr = 0;
+    this.colors = 0;
+    this.importantColors = 0;
+    this.bottomUp = true;
+    this.paletteEntrySize = 3;
+    this.externalMaskOffset = this.dibStart + this.headerSize;
+
+    this.validateDimensions();
+  }
+
+  private parseInfoHeader(): void {
+    const rawWidth = this.readInt32LE(this.dibStart + 4);
+    const rawHeight = this.readInt32LE(this.dibStart + 8);
+
+    this.width = rawWidth;
+    this.height = rawHeight;
+    this.planes = this.readUInt16LE(this.dibStart + 12);
+    this.bitPP = this.readUInt16LE(this.dibStart + 14);
+    this.compress = this.readUInt32LE(this.dibStart + 16);
+    this.rawSize = this.readUInt32LE(this.dibStart + 20);
+    this.hr = this.readUInt32LE(this.dibStart + 24);
+    this.vr = this.readUInt32LE(this.dibStart + 28);
+    this.colors = this.readUInt32LE(this.dibStart + 32);
+    this.importantColors = this.readUInt32LE(this.dibStart + 36);
+    this.paletteEntrySize = 4;
+    this.externalMaskOffset = this.dibStart + this.headerSize;
 
     if (this.height < 0) {
       this.height *= -1;
       this.bottomUp = false;
     }
+
+    if (this.width < 0) {
+      this.width *= -1;
+    }
+
+    if (this.bitPP === 16 && this.options.treat16BitAs15BitAlpha) {
+      this.bitPP = 15;
+    }
+
+    this.validateDimensions();
+    this.parseBitMasks();
+  }
+
+  private validateDimensions(): void {
+    if (
+      !Number.isInteger(this.width) ||
+      !Number.isInteger(this.height) ||
+      this.width <= 0 ||
+      this.height <= 0
+    ) {
+      throw new Error(`Invalid BMP dimensions: ${this.width}x${this.height}`);
+    }
+  }
+
+  private parseBitMasks(): void {
+    if (
+      !(this.bitPP === 16 || this.bitPP === 32) ||
+      !(this.compress === 3 || this.compress === 6)
+    ) {
+      return;
+    }
+
+    const inHeaderMaskStart = this.dibStart + 40;
+    const hasMasksInHeader = this.headerSize >= 52;
+    const maskStart = hasMasksInHeader ? inHeaderMaskStart : this.externalMaskOffset;
+    const maskCount = this.compress === 6 || this.headerSize >= 56 ? 4 : 3;
+    this.ensureReadable(maskStart, maskCount * 4, "bit masks");
+
+    this.maskRed = this.readUInt32LE(maskStart);
+    this.maskGreen = this.readUInt32LE(maskStart + 4);
+    this.maskBlue = this.readUInt32LE(maskStart + 8);
+    this.maskAlpha = maskCount >= 4 ? this.readUInt32LE(maskStart + 12) : 0;
+
+    if (!hasMasksInHeader) {
+      this.externalMaskOffset += maskCount * 4;
+    }
+  }
+
+  private parsePalette(): void {
+    if (this.bitPP >= 16) {
+      return;
+    }
+
+    const colorCount = this.colors === 0 ? 1 << this.bitPP : this.colors;
+    if (colorCount <= 0) {
+      return;
+    }
+
+    const paletteStart = this.externalMaskOffset;
+    const paletteSize = colorCount * this.paletteEntrySize;
+    if (paletteStart + paletteSize > this.offset) {
+      throw new Error("Palette data overlaps or exceeds pixel data offset");
+    }
+
+    this.palette = new Array(colorCount);
+    for (let i = 0; i < colorCount; i += 1) {
+      const base = paletteStart + i * this.paletteEntrySize;
+      const blue = this.readUInt8(base);
+      const green = this.readUInt8(base + 1);
+      const red = this.readUInt8(base + 2);
+      const quad = this.paletteEntrySize === 4 ? this.readUInt8(base + 3) : 0;
+      this.palette[i] = { red, green, blue, quad };
+    }
   }
 
   private parseRGBA(): void {
-    const len = this.width * this.height * 4;
-    this.data = Buffer.alloc(len);
+    const pixelCount = this.width * this.height;
+    const len = pixelCount * 4;
+    this.data = new Uint8Array(len);
 
     switch (this.bitPP) {
       case 1:
@@ -130,375 +282,311 @@ class BmpDecoder implements DecodedBmp {
       return color;
     }
 
-    return {
-      red: 0xff,
-      green: 0xff,
-      blue: 0xff,
-      quad: 0x00,
-    };
+    return { red: 0xff, green: 0xff, blue: 0xff, quad: 0x00 };
+  }
+
+  private setPixel(
+    destY: number,
+    x: number,
+    alpha: number,
+    blue: number,
+    green: number,
+    red: number,
+  ): void {
+    const base = (destY * this.width + x) * 4;
+    this.data[base] = alpha;
+    this.data[base + 1] = blue;
+    this.data[base + 2] = green;
+    this.data[base + 3] = red;
   }
 
   private bit1(): void {
-    const xLen = Math.ceil(this.width / 8);
-    const mode = xLen % 4;
+    const stride = rowStride(this.width, 1);
+    const bytesPerRow = Math.ceil(this.width / 8);
 
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
-      for (let x = 0; x < xLen; x += 1) {
-        const b = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 8 * 4;
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, bytesPerRow, "1-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
 
-        for (let i = 0; i < 8; i += 1) {
-          if (x * 8 + i >= this.width) {
-            break;
-          }
-
-          const rgb = this.getPaletteColor((b >> (7 - i)) & 0x1);
-          this.data[location + i * 4] = 0;
-          this.data[location + i * 4 + 1] = rgb.blue;
-          this.data[location + i * 4 + 2] = rgb.green;
-          this.data[location + i * 4 + 3] = rgb.red;
-        }
-      }
-
-      if (mode !== 0) {
-        this.pos += 4 - mode;
+      for (let x = 0; x < this.width; x += 1) {
+        const packed = this.readUInt8(rowStart + Math.floor(x / 8));
+        const bit = (packed >> (7 - (x % 8))) & 0x01;
+        const rgb = this.getPaletteColor(bit);
+        this.setPixel(destY, x, 0, rgb.blue, rgb.green, rgb.red);
       }
     }
   }
 
   private bit4(): void {
     if (this.compress === 2) {
-      this.data.fill(0xff);
-
-      let location = 0;
-      let lines = this.bottomUp ? this.height - 1 : 0;
-      let lowNibble = false;
-
-      while (location < this.data.length) {
-        const a = this.buffer.readUInt8(this.pos++);
-        const b = this.buffer.readUInt8(this.pos++);
-
-        if (a === 0) {
-          if (b === 0) {
-            lines += this.bottomUp ? -1 : 1;
-            location = lines * this.width * 4;
-            lowNibble = false;
-            continue;
-          }
-
-          if (b === 1) {
-            break;
-          }
-
-          if (b === 2) {
-            const x = this.buffer.readUInt8(this.pos++);
-            const y = this.buffer.readUInt8(this.pos++);
-            lines += this.bottomUp ? -y : y;
-            location += y * this.width * 4 + x * 4;
-            continue;
-          }
-
-          let c = this.buffer.readUInt8(this.pos++);
-          for (let i = 0; i < b; i += 1) {
-            if (lowNibble) {
-              setPixelData.call(this, c & 0x0f);
-            } else {
-              setPixelData.call(this, (c & 0xf0) >> 4);
-            }
-
-            if ((i & 1) === 1 && i + 1 < b) {
-              c = this.buffer.readUInt8(this.pos++);
-            }
-
-            lowNibble = !lowNibble;
-          }
-
-          if ((((b + 1) >> 1) & 1) === 1) {
-            this.pos += 1;
-          }
-        } else {
-          for (let i = 0; i < a; i += 1) {
-            if (lowNibble) {
-              setPixelData.call(this, b & 0x0f);
-            } else {
-              setPixelData.call(this, (b & 0xf0) >> 4);
-            }
-            lowNibble = !lowNibble;
-          }
-        }
-      }
-
-      function setPixelData(this: BmpDecoder, rgbIndex: number): void {
-        const rgb = this.getPaletteColor(rgbIndex);
-        this.data[location] = 0;
-        this.data[location + 1] = rgb.blue;
-        this.data[location + 2] = rgb.green;
-        this.data[location + 3] = rgb.red;
-        location += 4;
-      }
+      this.bit4Rle();
       return;
     }
 
-    const xLen = Math.ceil(this.width / 2);
-    const mode = xLen % 4;
+    const stride = rowStride(this.width, 4);
+    const bytesPerRow = Math.ceil(this.width / 2);
 
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
-      for (let x = 0; x < xLen; x += 1) {
-        const b = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 2 * 4;
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, bytesPerRow, "4-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
 
-        const before = b >> 4;
-        const after = b & 0x0f;
-
-        let rgb = this.getPaletteColor(before);
-        this.data[location] = 0;
-        this.data[location + 1] = rgb.blue;
-        this.data[location + 2] = rgb.green;
-        this.data[location + 3] = rgb.red;
-
-        if (x * 2 + 1 >= this.width) {
-          break;
-        }
-
-        rgb = this.getPaletteColor(after);
-        this.data[location + 4] = 0;
-        this.data[location + 5] = rgb.blue;
-        this.data[location + 6] = rgb.green;
-        this.data[location + 7] = rgb.red;
-      }
-
-      if (mode !== 0) {
-        this.pos += 4 - mode;
+      for (let x = 0; x < this.width; x += 1) {
+        const packed = this.readUInt8(rowStart + Math.floor(x / 2));
+        const idx = x % 2 === 0 ? (packed & 0xf0) >> 4 : packed & 0x0f;
+        const rgb = this.getPaletteColor(idx);
+        this.setPixel(destY, x, 0, rgb.blue, rgb.green, rgb.red);
       }
     }
   }
 
   private bit8(): void {
     if (this.compress === 1) {
-      this.data.fill(0xff);
-
-      let location = 0;
-      let lines = this.bottomUp ? this.height - 1 : 0;
-
-      while (location < this.data.length) {
-        const a = this.buffer.readUInt8(this.pos++);
-        const b = this.buffer.readUInt8(this.pos++);
-
-        if (a === 0) {
-          if (b === 0) {
-            lines += this.bottomUp ? -1 : 1;
-            location = lines * this.width * 4;
-            continue;
-          }
-
-          if (b === 1) {
-            break;
-          }
-
-          if (b === 2) {
-            const x = this.buffer.readUInt8(this.pos++);
-            const y = this.buffer.readUInt8(this.pos++);
-            lines += this.bottomUp ? -y : y;
-            location += y * this.width * 4 + x * 4;
-            continue;
-          }
-
-          for (let i = 0; i < b; i += 1) {
-            const c = this.buffer.readUInt8(this.pos++);
-            setPixelData.call(this, c);
-          }
-
-          if ((b & 1) === 1) {
-            this.pos += 1;
-          }
-        } else {
-          for (let i = 0; i < a; i += 1) {
-            setPixelData.call(this, b);
-          }
-        }
-      }
-
-      function setPixelData(this: BmpDecoder, rgbIndex: number): void {
-        const rgb = this.getPaletteColor(rgbIndex);
-        this.data[location] = 0;
-        this.data[location + 1] = rgb.blue;
-        this.data[location + 2] = rgb.green;
-        this.data[location + 3] = rgb.red;
-        location += 4;
-      }
+      this.bit8Rle();
       return;
     }
 
-    const mode = this.width % 4;
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
+    const stride = rowStride(this.width, 8);
+    const bytesPerRow = this.width;
+
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, bytesPerRow, "8-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
+
       for (let x = 0; x < this.width; x += 1) {
-        const b = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 4;
-
-        const rgb = this.getPaletteColor(b);
-        this.data[location] = 0;
-        this.data[location + 1] = rgb.blue;
-        this.data[location + 2] = rgb.green;
-        this.data[location + 3] = rgb.red;
-      }
-
-      if (mode !== 0) {
-        this.pos += 4 - mode;
+        const idx = this.readUInt8(rowStart + x);
+        const rgb = this.getPaletteColor(idx);
+        this.setPixel(destY, x, 0, rgb.blue, rgb.green, rgb.red);
       }
     }
   }
 
   private bit15(): void {
-    const difW = this.width % 3;
-    const m = 0b11111;
+    const stride = rowStride(this.width, 16);
+    const max = 0b11111;
 
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, this.width * 2, "15-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
+
       for (let x = 0; x < this.width; x += 1) {
-        const value = this.buffer.readUInt16LE(this.pos);
-        this.pos += 2;
+        const value = this.readUInt16LE(rowStart + x * 2);
+        const blue = (((value >> 0) & max) / max) * 255;
+        const green = (((value >> 5) & max) / max) * 255;
+        const red = (((value >> 10) & max) / max) * 255;
+        const alpha = (value & 0x8000) !== 0 ? 0xff : 0x00;
 
-        const blue = ((value & m) / m) * 255;
-        const green = (((value >> 5) & m) / m) * 255;
-        const red = (((value >> 10) & m) / m) * 255;
-        const alpha = value >> 15 !== 0 ? 0xff : 0x00;
-
-        const location = line * this.width * 4 + x * 4;
-        this.data[location] = alpha;
-        this.data[location + 1] = blue | 0;
-        this.data[location + 2] = green | 0;
-        this.data[location + 3] = red | 0;
+        this.setPixel(destY, x, alpha, blue | 0, green | 0, red | 0);
       }
-
-      this.pos += difW;
     }
   }
 
+  private scaleMasked(value: number, mask: number): number {
+    if (mask === 0) return 0;
+    let shift = 0;
+    let bits = 0;
+    let m = mask;
+    while ((m & 1) === 0) {
+      shift += 1;
+      m >>>= 1;
+    }
+    while ((m & 1) === 1) {
+      bits += 1;
+      m >>>= 1;
+    }
+
+    const component = (value & mask) >>> shift;
+    if (bits >= 8) {
+      return component >>> (bits - 8);
+    }
+
+    return (component << (8 - bits)) & 0xff;
+  }
+
   private bit16(): void {
-    const difW = (this.width % 2) * 2;
-    this.maskRed = 0x7c00;
-    this.maskGreen = 0x03e0;
-    this.maskBlue = 0x001f;
-    this.mask0 = 0;
-
-    if (this.compress === 3) {
-      this.maskRed = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
-      this.maskGreen = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
-      this.maskBlue = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
-      this.mask0 = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
+    if (this.maskRed === 0 && this.maskGreen === 0 && this.maskBlue === 0) {
+      this.maskRed = 0x7c00;
+      this.maskGreen = 0x03e0;
+      this.maskBlue = 0x001f;
     }
 
-    const ns: [number, number, number] = [0, 0, 0];
-    for (let i = 0; i < 16; i += 1) {
-      if (((this.maskRed >> i) & 0x01) !== 0) ns[0] += 1;
-      if (((this.maskGreen >> i) & 0x01) !== 0) ns[1] += 1;
-      if (((this.maskBlue >> i) & 0x01) !== 0) ns[2] += 1;
-    }
+    const stride = rowStride(this.width, 16);
 
-    ns[1] += ns[0];
-    ns[2] += ns[1];
-    ns[0] = 8 - ns[0];
-    ns[1] -= 8;
-    ns[2] -= 8;
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, this.width * 2, "16-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
 
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
       for (let x = 0; x < this.width; x += 1) {
-        const value = this.buffer.readUInt16LE(this.pos);
-        this.pos += 2;
-
-        const blue = (value & this.maskBlue) << ns[0];
-        const green = (value & this.maskGreen) >> ns[1];
-        const red = (value & this.maskRed) >> ns[2];
-
-        const location = line * this.width * 4 + x * 4;
-        this.data[location] = 0;
-        this.data[location + 1] = blue;
-        this.data[location + 2] = green;
-        this.data[location + 3] = red;
+        const value = this.readUInt16LE(rowStart + x * 2);
+        const blue = this.scaleMasked(value, this.maskBlue);
+        const green = this.scaleMasked(value, this.maskGreen);
+        const red = this.scaleMasked(value, this.maskRed);
+        const alpha = this.maskAlpha !== 0 ? this.scaleMasked(value, this.maskAlpha) : 0x00;
+        this.setPixel(destY, x, alpha, blue, green, red);
       }
-
-      this.pos += difW;
     }
   }
 
   private bit24(): void {
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
-      for (let x = 0; x < this.width; x += 1) {
-        const blue = this.buffer.readUInt8(this.pos++);
-        const green = this.buffer.readUInt8(this.pos++);
-        const red = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 4;
-        this.data[location] = 0;
-        this.data[location + 1] = blue;
-        this.data[location + 2] = green;
-        this.data[location + 3] = red;
-      }
+    const stride = rowStride(this.width, 24);
 
-      this.pos += this.width % 4;
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, this.width * 3, "24-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
+
+      for (let x = 0; x < this.width; x += 1) {
+        const base = rowStart + x * 3;
+        const blue = this.readUInt8(base);
+        const green = this.readUInt8(base + 1);
+        const red = this.readUInt8(base + 2);
+        this.setPixel(destY, x, 0, blue, green, red);
+      }
     }
   }
 
   private bit32(): void {
-    if (this.compress === 3) {
-      this.maskRed = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
-      this.maskGreen = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
-      this.maskBlue = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
-      this.mask0 = this.buffer.readUInt32LE(this.pos);
-      this.pos += 4;
+    const stride = rowStride(this.width, 32);
 
-      for (let y = this.height - 1; y >= 0; y -= 1) {
-        const line = this.bottomUp ? y : this.height - 1 - y;
-        for (let x = 0; x < this.width; x += 1) {
-          const alpha = this.buffer.readUInt8(this.pos++);
-          const blue = this.buffer.readUInt8(this.pos++);
-          const green = this.buffer.readUInt8(this.pos++);
-          const red = this.buffer.readUInt8(this.pos++);
-          const location = line * this.width * 4 + x * 4;
-          this.data[location] = alpha;
-          this.data[location + 1] = blue;
-          this.data[location + 2] = green;
-          this.data[location + 3] = red;
-        }
-      }
+    for (let srcRow = 0; srcRow < this.height; srcRow += 1) {
+      const rowStart = this.offset + srcRow * stride;
+      this.ensureReadable(rowStart, this.width * 4, "32-bit row");
+      const destY = this.bottomUp ? this.height - 1 - srcRow : srcRow;
 
-      return;
-    }
-
-    for (let y = this.height - 1; y >= 0; y -= 1) {
-      const line = this.bottomUp ? y : this.height - 1 - y;
       for (let x = 0; x < this.width; x += 1) {
-        const blue = this.buffer.readUInt8(this.pos++);
-        const green = this.buffer.readUInt8(this.pos++);
-        const red = this.buffer.readUInt8(this.pos++);
-        const alpha = this.buffer.readUInt8(this.pos++);
-        const location = line * this.width * 4 + x * 4;
-        this.data[location] = alpha;
-        this.data[location + 1] = blue;
-        this.data[location + 2] = green;
-        this.data[location + 3] = red;
+        const base = rowStart + x * 4;
+        if (this.compress === 3 || this.compress === 6) {
+          const pixel = this.readUInt32LE(base);
+          const red = this.scaleMasked(pixel, this.maskRed || 0x00ff0000);
+          const green = this.scaleMasked(pixel, this.maskGreen || 0x0000ff00);
+          const blue = this.scaleMasked(pixel, this.maskBlue || 0x000000ff);
+          const alpha = this.maskAlpha === 0 ? 0 : this.scaleMasked(pixel, this.maskAlpha);
+          this.setPixel(destY, x, alpha, blue, green, red);
+        } else {
+          const blue = this.readUInt8(base);
+          const green = this.readUInt8(base + 1);
+          const red = this.readUInt8(base + 2);
+          const alpha = this.readUInt8(base + 3);
+          this.setPixel(destY, x, alpha, blue, green, red);
+        }
       }
     }
   }
 
-  getData(): Buffer {
+  private bit8Rle(): void {
+    this.data.fill(0xff);
+    this.pos = this.offset;
+    let x = 0;
+    let y = this.bottomUp ? this.height - 1 : 0;
+
+    while (this.pos < this.bytes.length) {
+      const count = this.readUInt8();
+      const value = this.readUInt8();
+
+      if (count === 0) {
+        if (value === 0) {
+          x = 0;
+          y += this.bottomUp ? -1 : 1;
+          continue;
+        }
+        if (value === 1) {
+          break;
+        }
+        if (value === 2) {
+          x += this.readUInt8();
+          y += this.bottomUp ? -this.readUInt8() : this.readUInt8();
+          continue;
+        }
+
+        for (let i = 0; i < value; i += 1) {
+          const idx = this.readUInt8();
+          const rgb = this.getPaletteColor(idx);
+          if (x < this.width && y >= 0 && y < this.height) {
+            this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+          }
+          x += 1;
+        }
+        if ((value & 1) === 1) {
+          this.pos += 1;
+        }
+        continue;
+      }
+
+      const rgb = this.getPaletteColor(value);
+      for (let i = 0; i < count; i += 1) {
+        if (x < this.width && y >= 0 && y < this.height) {
+          this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+        }
+        x += 1;
+      }
+    }
+  }
+
+  private bit4Rle(): void {
+    this.data.fill(0xff);
+    this.pos = this.offset;
+    let x = 0;
+    let y = this.bottomUp ? this.height - 1 : 0;
+
+    while (this.pos < this.bytes.length) {
+      const count = this.readUInt8();
+      const value = this.readUInt8();
+
+      if (count === 0) {
+        if (value === 0) {
+          x = 0;
+          y += this.bottomUp ? -1 : 1;
+          continue;
+        }
+        if (value === 1) {
+          break;
+        }
+        if (value === 2) {
+          x += this.readUInt8();
+          y += this.bottomUp ? -this.readUInt8() : this.readUInt8();
+          continue;
+        }
+
+        let current = this.readUInt8();
+        for (let i = 0; i < value; i += 1) {
+          const nibble = i % 2 === 0 ? (current & 0xf0) >> 4 : current & 0x0f;
+          const rgb = this.getPaletteColor(nibble);
+          if (x < this.width && y >= 0 && y < this.height) {
+            this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+          }
+          x += 1;
+          if (i % 2 === 1 && i + 1 < value) {
+            current = this.readUInt8();
+          }
+        }
+        if ((((value + 1) >> 1) & 1) === 1) {
+          this.pos += 1;
+        }
+        continue;
+      }
+
+      for (let i = 0; i < count; i += 1) {
+        const nibble = i % 2 === 0 ? (value & 0xf0) >> 4 : value & 0x0f;
+        const rgb = this.getPaletteColor(nibble);
+        if (x < this.width && y >= 0 && y < this.height) {
+          this.setPixel(y, x, 0, rgb.blue, rgb.green, rgb.red);
+        }
+        x += 1;
+      }
+    }
+  }
+
+  getData(): Uint8Array {
     return this.data;
   }
 }
 
-export function decode(bmpData: Buffer): DecodedBmp {
-  return new BmpDecoder(bmpData);
+export function decode(bmpData: BmpBinaryInput, options?: DecodeOptions): DecodedBmp {
+  return new BmpDecoder(bmpData, options);
 }
 
 export { BmpDecoder };
