@@ -20,6 +20,10 @@
 }
 
 .dark {
+  --vp-c-brand-1: #93c5fd;
+  --vp-c-brand-2: #bfdbfe;
+  --vp-c-brand-3: #dbeafe;
+  --vp-c-brand-soft: rgba(147, 197, 253, 0.2);
   --bmp-hero-bg: linear-gradient(155deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.82));
   --bmp-hero-border: rgba(148, 163, 184, 0.32);
   --bmp-card-bg: rgba(15, 23, 42, 0.82);
@@ -50,6 +54,17 @@
   background:
     radial-gradient(1000px 460px at 12% -6%, rgba(59, 130, 246, 0.2), transparent 64%),
     radial-gradient(900px 500px at 88% -8%, rgba(2, 132, 199, 0.18), transparent 68%);
+}
+
+.dark .vp-doc a {
+  color: #93c5fd;
+  text-decoration-color: rgba(147, 197, 253, 0.72);
+  text-underline-offset: 2px;
+}
+
+.dark .vp-doc a:hover {
+  color: #dbeafe;
+  text-decoration-color: rgba(219, 234, 254, 0.86);
 }
 
 .bmp-hero {
