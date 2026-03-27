@@ -102,6 +102,44 @@ If `toRGBA: true` is provided to `decode`, output is returned in `RGBA`.
 
 Input/output binary types use `Uint8Array` (Node `Buffer` is fully compatible because it extends `Uint8Array`).
 
+## Sharp adapter (optional subexport)
+
+The package ships an optional Sharp adapter at `@huh-david/bmp-js/sharp`.
+Core usage does not require `sharp`.
+
+Install Sharp only when using the adapter:
+
+```bash
+pnpm add sharp
+```
+
+### BMP -> Sharp -> PNG
+
+```ts
+import sharp from "sharp";
+import { sharpFromBmp } from "@huh-david/bmp-js/sharp";
+
+const png = await sharpFromBmp(bmpBytes, sharp).resize(800).png().toBuffer();
+```
+
+### Sharp raw -> BMP
+
+```ts
+import sharp from "sharp";
+import { encodeFromSharp } from "@huh-david/bmp-js/sharp";
+
+const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+
+const bmp = encodeFromSharp({ data, info }, { bitDepth: 32 });
+```
+
+Adapter behavior:
+
+- `decodeForSharp` and `sharpFromBmp` require BMP input and throw on non-BMP bytes.
+- Sharp-bound decode output is normalized to `RGBA` + `{ raw: { width, height, channels: 4 } }`.
+- `encodeFromSharp` supports `channels` 3 and 4 only; other values throw.
+- Default encode depth is data-preserving: RGB -> 24-bit, RGBA -> 32-bit.
+
 ## Development
 
 ```bash
