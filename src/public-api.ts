@@ -4,13 +4,16 @@
  */
 export { decode } from "./decoder";
 export { encode } from "./encoder";
+export { decodeRgba, decodeRgb } from "./output-format";
 
 export type {
   BmpBinaryInput,
   BmpImageData,
   BmpPaletteColor,
+  DecodeColorOptions,
   DecodeOptions,
   DecodedBmp,
+  DecodedRgb,
   EncodeBitDepth,
   EncodeOptions,
   EncodedBmp,

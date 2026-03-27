@@ -90,10 +90,20 @@ const decoded = decode(inputBytes, {
 });
 ```
 
+### Output format helpers (non-breaking)
+
+```ts
+import { decodeRgb, decodeRgba } from "@huh-david/bmp-js";
+
+const rgba = decodeRgba(inputBytes); // DecodedBmp with RGBA data
+const rgb = decodeRgb(inputBytes); // { data, width, height, channels: 3, format: "rgb" }
+```
+
 ## Data layout
 
 Decoded pixel data is a byte buffer in `ABGR` order by default.
 If `toRGBA: true` is provided to `decode`, output is returned in `RGBA`.
+`decodeRgba` and `decodeRgb` are explicit opt-in helpers for RGBA/RGB consumers.
 
 - `A`: alpha
 - `B`: blue

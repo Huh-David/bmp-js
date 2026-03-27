@@ -8,13 +8,14 @@ Sources:
 
 ## Remaining technical backlog
 
-- [ ] Evaluate optional output format helpers for RGB/RGBA-friendly consumers while preserving default `ABGR`.
+- [x] Evaluate optional output format helpers for RGB/RGBA-friendly consumers while preserving default `ABGR`.
   - Upstream refs:
   - Issue: https://github.com/shaozilee/bmp-js/issues/16
   - PR: https://github.com/shaozilee/bmp-js/pull/19
   - Notes:
-  - Current fork keeps `ABGR` for compatibility and documents it clearly.
-  - Future option should be explicit and non-breaking.
+  - Current fork keeps `ABGR` as default for compatibility.
+  - Added explicit non-breaking helpers: `decodeRgba` and `decodeRgb`.
+  - Kept `decode(..., { toRGBA: true })` unchanged for backward compatibility.
 
 - [x] Add browser runtime smoke tests (e.g. `vitest --browser` or bundled example) for decode/encode paths.
   - Upstream refs:

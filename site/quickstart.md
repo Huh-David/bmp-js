@@ -60,3 +60,12 @@ writeFileSync("./roundtrip.bmp", roundtrip.data);
 
 Decoded pixel layout is `ABGR` by default.  
 Set `toRGBA: true` for RGBA output.
+
+## RGB/RGBA Helpers
+
+```ts
+import { decodeRgb, decodeRgba } from "@huh-david/bmp-js";
+
+const rgba = decodeRgba(inputBytes); // DecodedBmp with RGBA data
+const rgb = decodeRgb(inputBytes); // packed RGB bytes + width/height metadata
+```
