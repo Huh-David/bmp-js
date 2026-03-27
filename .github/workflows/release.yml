@@ -31,22 +31,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Detect npm auth mode
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -n "${NPM_TOKEN}" ]; then
-            echo "Using NPM_TOKEN auth mode."
-          else
-            echo "No NPM_TOKEN configured. Falling back to npm Trusted Publishing (OIDC)."
-          fi
-
-      - name: Verify npm identity (token mode only)
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm whoami
-
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:
