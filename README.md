@@ -1,59 +1,78 @@
-# bmp-js
+# @huh-david/bmp-js
 
-A pure javascript Bmp encoder and decoder for node.js
+A pure TypeScript BMP encoder/decoder for Node.js.
 
-Supports all bits decoding(1,4,8,16,24,32) and encoding with 24bit.
+## Features
+
+- Decoding for BMP bit depths: 1, 4, 8, 15, 16, 24, 32
+- Decoding support for RLE-4 and RLE-8 compressed BMPs
+- Encoding output as 24-bit BMP
+- Dual package output: ESM + CommonJS
+- First-class TypeScript types
 
 ## Install
 
-    npm install bmp-js
-
-## How to use
-
-### Decode BMP
-
-```js
-var bmp = require("bmp-js");
-var bmpBuffer = fs.readFileSync('bit24.bmp');
-var bmpData = bmp.decode(bmpBuffer);
+```bash
+pnpm add @huh-david/bmp-js
 ```
 
-`bmpData` has all properties, including:
+## Usage
 
-1. fileSize
-2. reserved
-3. offset
-4. headerSize
-5. width
-6. height
-7. planes
-8. bitPP
-9. compress
-10. rawSize
-11. hr
-12. vr
-13. colors
-14. importantColors
-15. palette
-16. data
-    a. This is a byte array
-    b. The bytes are ordered as follows: ABGR (alpha, blue, green, red)
-    c. 4 bytes represent 1 pixel
+### ESM
 
-### Encode RGB
+```ts
+import { decode, encode } from "@huh-david/bmp-js";
+import { readFileSync, writeFileSync } from "node:fs";
 
-```js
-var bmp = require("bmp-js");
-var fs = require("fs");
-var bmpData = {
-    data, //Buffer
-    width, //Number
-    height //Number
-};
-var rawData = bmp.encode(bmpData); //defaults to no compression
-fs.WriteFileSync('./image.bmp', rawData.data);
+const input = readFileSync("./image.bmp");
+const decoded = decode(input);
+
+const encoded = encode({
+  data: decoded.data,
+  width: decoded.width,
+  height: decoded.height,
+});
+
+writeFileSync("./roundtrip.bmp", encoded.data);
 ```
 
-### License
+### CommonJS
 
-You can use for free with [MIT License](https://github.com/shaozilee/bmp-js/blob/master/LICENSE)
+```js
+const bmp = require("@huh-david/bmp-js");
+const fs = require("node:fs");
+
+const decoded = bmp.decode(fs.readFileSync("./image.bmp"));
+const encoded = bmp.encode(decoded);
+
+fs.writeFileSync("./roundtrip.bmp", encoded.data);
+```
+
+## Data layout
+
+Decoded pixel data is a byte buffer in `ABGR` order.
+
+- `A`: alpha
+- `B`: blue
+- `G`: green
+- `R`: red
+
+## Development
+
+```bash
+pnpm install
+pnpm check
+```
+
+Useful scripts:
+
+- `pnpm build`
+- `pnpm test`
+- `pnpm test:watch`
+- `pnpm lint`
+- `pnpm format`
+- `pnpm typecheck`
+
+## License
+
+MIT
