@@ -1,5 +1,16 @@
 # @huh-david/bmp-js
 
+## 0.8.2
+
+### Patch Changes
+
+- 2eedd58: Improve package discoverability and migration onboarding.
+
+  Changes:
+  - add migration guide in docs and README
+  - add AI-assisted migration prompt template
+  - refresh npm package keywords for better search discoverability
+
 ## 0.8.1
 
 ### Patch Changes
