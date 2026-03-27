@@ -5,6 +5,7 @@ node_modules/
 dist/
 coverage/
 site/.vitepress/dist/
+site/.vitepress/cache/
 site/api/reference/
 
 # IDE

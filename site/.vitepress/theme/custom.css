@@ -7,6 +7,29 @@
   --vp-c-brand-2: #3b82f6;
   --vp-c-brand-3: #60a5fa;
   --vp-c-brand-soft: rgba(59, 130, 246, 0.16);
+  --bmp-hero-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.8));
+  --bmp-hero-border: rgba(30, 64, 175, 0.14);
+  --bmp-card-bg: rgba(255, 255, 255, 0.86);
+  --bmp-card-border: rgba(100, 116, 139, 0.2);
+  --bmp-text-strong: #0f172a;
+  --bmp-text-muted: #334155;
+  --bmp-action-bg: #eff6ff;
+  --bmp-action-bg-hover: #dbeafe;
+  --bmp-action-border: rgba(59, 130, 246, 0.32);
+  --bmp-action-text: #1d4ed8;
+}
+
+.dark {
+  --bmp-hero-bg: linear-gradient(155deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.82));
+  --bmp-hero-border: rgba(148, 163, 184, 0.32);
+  --bmp-card-bg: rgba(15, 23, 42, 0.82);
+  --bmp-card-border: rgba(148, 163, 184, 0.28);
+  --bmp-text-strong: #e2e8f0;
+  --bmp-text-muted: #cbd5e1;
+  --bmp-action-bg: rgba(30, 64, 175, 0.18);
+  --bmp-action-bg-hover: rgba(59, 130, 246, 0.28);
+  --bmp-action-border: rgba(96, 165, 250, 0.35);
+  --bmp-action-text: #bfdbfe;
 }
 
 .vp-doc h1,
@@ -23,13 +46,19 @@
     radial-gradient(900px 500px at 88% -8%, rgba(2, 132, 199, 0.12), transparent 68%);
 }
 
+.dark .layout {
+  background:
+    radial-gradient(1000px 460px at 12% -6%, rgba(59, 130, 246, 0.2), transparent 64%),
+    radial-gradient(900px 500px at 88% -8%, rgba(2, 132, 199, 0.18), transparent 68%);
+}
+
 .bmp-hero {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(30, 64, 175, 0.14);
+  border: 1px solid var(--bmp-hero-border);
   border-radius: 20px;
   padding: 2.5rem 1.4rem;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.95), rgba(239, 246, 255, 0.75));
+  background: var(--bmp-hero-bg);
   animation: hero-enter 0.45s ease-out;
 }
 
@@ -47,6 +76,11 @@
 
 .bmp-hero p {
   font-size: 1.03rem;
+  color: var(--bmp-text-muted);
+}
+
+.bmp-hero h1 {
+  color: var(--bmp-text-strong);
 }
 
 .bmp-actions {
@@ -54,6 +88,24 @@
   flex-wrap: wrap;
   gap: 0.7rem;
   margin-top: 1rem;
+}
+
+.bmp-actions a {
+  border: 1px solid var(--bmp-action-border);
+  border-radius: 999px;
+  padding: 0.42rem 0.8rem;
+  color: var(--bmp-action-text);
+  background: var(--bmp-action-bg);
+  text-decoration: none;
+  font-weight: 600;
+  transition:
+    background-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.bmp-actions a:hover {
+  background: var(--bmp-action-bg-hover);
+  transform: translateY(-1px);
 }
 
 .bmp-grid {
@@ -64,15 +116,20 @@
 }
 
 .bmp-card {
-  border: 1px solid rgba(100, 116, 139, 0.2);
+  border: 1px solid var(--bmp-card-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bmp-card-bg);
   padding: 0.9rem;
 }
 
 .bmp-card h3 {
   margin: 0 0 0.35rem;
   font-size: 1rem;
+  color: var(--bmp-text-strong);
+}
+
+.bmp-card p {
+  color: var(--bmp-text-muted);
 }
 
 .vp-doc div[class*="language-"] {
