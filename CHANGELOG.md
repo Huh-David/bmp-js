@@ -1,5 +1,11 @@
 # @huh-david/bmp-js
 
+## 0.8.3
+
+### Patch Changes
+
+- Refresh development dependencies to their latest available versions.
+
 ## 0.8.2
 
 ### Patch Changes
