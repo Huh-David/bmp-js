@@ -23,6 +23,8 @@ describe("opaque alpha defaults", () => {
       "generated/valid-v5-2x2.bmp",
     ];
 
+    expect(fixtures.length).toBeGreaterThan(0);
+
     for (const file of fixtures) {
       const bmp = readFileSync(join(process.cwd(), "fixtures", file));
       const decoded = decode(bmp);
@@ -47,6 +49,7 @@ describe("opaque alpha defaults", () => {
 
     const encoded = encode({ width, height, data });
     const decoded = decode(encoded.data);
+    expect(decoded.data.length).toBe(width * height * 4);
     expectAllAlpha255(decoded.data);
   });
 });

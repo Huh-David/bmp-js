@@ -13,6 +13,7 @@ import {
   NotBmpInputError,
   sharpFromBmp,
   toSharpInput,
+  type SharpModule,
 } from "../../src/sharp/index";
 import type { BmpPaletteColor } from "../../src/types";
 
@@ -20,7 +21,7 @@ const fixturesDir = join(process.cwd(), "fixtures");
 const require = createRequire(import.meta.url);
 const sharpModule = (() => {
   try {
-    return require("sharp") as typeof import("sharp");
+    return require("sharp") as SharpModule;
   } catch {
     return null;
   }
@@ -94,7 +95,7 @@ describe("sharp adapter", () => {
 
   it.skipIf(!sharpModule)("sharpFromBmp supports resize/png flow with sharp", async () => {
     const fixture = readFileSync(join(fixturesDir, "bit24.bmp"));
-    const sharp = sharpModule as typeof import("sharp");
+    const sharp = sharpModule as SharpModule;
     const png = await sharpFromBmp(fixture, sharp).resize(12, 12).png().toBuffer();
 
     expect(Array.from(png.subarray(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -102,7 +103,7 @@ describe("sharp adapter", () => {
 
   it.skipIf(!sharpModule)("sharpFromBmp supports options-object overload", async () => {
     const fixture = readFileSync(join(fixturesDir, "bit24.bmp"));
-    const sharp = sharpModule as typeof import("sharp");
+    const sharp = sharpModule as SharpModule;
     const png = await sharpFromBmp({ input: fixture, sharp }).resize(10, 10).png().toBuffer();
 
     expect(Array.from(png.subarray(0, 8))).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -110,7 +111,7 @@ describe("sharp adapter", () => {
 
   it.skipIf(!sharpModule)("encodeFromSharp accepts raw output from sharp", async () => {
     const fixture = readFileSync(join(fixturesDir, "bit24.bmp"));
-    const sharp = sharpModule as typeof import("sharp");
+    const sharp = sharpModule as SharpModule;
     const { data, info } = await sharpFromBmp(fixture, sharp)
       .ensureAlpha()
       .raw()
@@ -126,7 +127,7 @@ describe("sharp adapter", () => {
 
   it.skipIf(!sharpModule)("roundtrips BMP through sharp raw and back to BMP", async () => {
     const fixture = readFileSync(join(fixturesDir, "bit24.bmp"));
-    const sharp = sharpModule as typeof import("sharp");
+    const sharp = sharpModule as SharpModule;
     const baseline = decodeForSharp(fixture);
 
     const { data, info } = await sharpFromBmp(fixture, sharp)

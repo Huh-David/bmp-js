@@ -1,5 +1,11 @@
 # @huh-david/bmp-js
 
+## 0.8.4
+
+### Patch Changes
+
+- Refresh development dependencies, migrate the project to pnpm 11, and add support for Sharp 0.35 as an optional peer.
+
 ## 0.8.3
 
 ### Patch Changes

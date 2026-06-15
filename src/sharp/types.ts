@@ -59,5 +59,5 @@ export interface SharpFromBmpOptions {
 
 export type BmpSharpInput = PixelSource;
 export type DecodeForSharpInput = PixelSource;
-export type SharpModule = typeof import("sharp");
-export type SharpInstance = import("sharp").Sharp;
+export type SharpModule = (typeof import("sharp"))["default"];
+export type SharpInstance = ReturnType<SharpModule>;

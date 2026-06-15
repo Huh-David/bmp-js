@@ -17,3 +17,6 @@ site/api/reference/
 
 # OS
 .DS_Store
+
+# pnpm
+.pnpm-store/
