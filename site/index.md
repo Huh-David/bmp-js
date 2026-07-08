@@ -6,10 +6,9 @@
     A pure TypeScript BMP encoder/decoder with fixture-backed behavior, dual ESM/CJS packaging, and a modern release flow.
   </p>
   <div class="bmp-actions">
-    <a class="vp-button brand" href="/quickstart">Quickstart</a>
-    <a class="vp-button alt" href="/migration">Migration</a>
-    <a class="vp-button alt" href="/api">API Reference</a>
-    <a class="vp-button alt" href="https://github.com/Huh-David/bmp-js">GitHub</a>
+
+[Quickstart](/quickstart) [Migration](/migration) [API Reference](/api) [GitHub](https://github.com/Huh-David/bmp-js)
+
   </div>
 </section>
 
