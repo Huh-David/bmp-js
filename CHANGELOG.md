@@ -1,5 +1,13 @@
 # @huh-david/bmp-js
 
+## 0.8.5
+
+### Patch Changes
+
+- feb5704: Update all development dependencies to their latest versions and fix the
+  home page hero action links so they respect the configured base path
+  (`/bmp-js/`) on GitHub Pages instead of resolving to the site root.
+
 ## 0.8.4
 
 ### Patch Changes
@@ -19,6 +27,7 @@
 - 2eedd58: Improve package discoverability and migration onboarding.
 
   Changes:
+
   - add migration guide in docs and README
   - add AI-assisted migration prompt template
   - refresh npm package keywords for better search discoverability
@@ -30,6 +39,7 @@
 - fa578d8: Refresh dependencies to current stable versions, including `sharp` and the Vitest toolchain.
 
   Highlights:
+
   - upgrade `sharp` to `0.34.x` in dev dependencies
   - broaden `sharp` optional peer support to `^0.33.5 || ^0.34.0`
   - upgrade Vitest and browser testing stack to `4.1.x`
@@ -43,6 +53,7 @@
 - 865d9a1: Add explicit non-breaking output format helpers for RGB/RGBA-friendly consumers while preserving ABGR as the default decode layout.
 
   New helpers:
+
   - `decodeRgba(bmpData, options?)` for explicit RGBA output.
   - `decodeRgb(bmpData, options?)` for packed RGB output (`width * height * 3`).
 
@@ -55,6 +66,7 @@
 - 658e197: Improve the optional `@huh-david/bmp-js/sharp` adapter ergonomics with better input typing and non-breaking overloads.
 
   Changes include:
+
   - `isBmp` now acts as a type guard over adapter input sources.
   - Added overload-friendly forms for `sharpFromBmp` and `encodeFromSharp`.
   - Added `info` alias on `decodeForSharp` output for sharper API consistency.
@@ -67,6 +79,7 @@
 - 88c34f1: Add an official optional Sharp adapter subexport at `@huh-david/bmp-js/sharp`.
 
   The adapter adds:
+
   - `isBmp(input)` signature checks
   - `decodeForSharp(input)` / `toSharpInput(input)` RGBA+raw decoding helpers
   - `sharpFromBmp(input, sharpModule?)` direct Sharp instance creation

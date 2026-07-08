@@ -1,6 +1,6 @@
 {
   "name": "@huh-david/bmp-js",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "A pure TypeScript BMP encoder and decoder for Node.js",
   "keywords": [
     "bitmap",
