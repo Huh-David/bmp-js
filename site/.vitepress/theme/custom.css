@@ -99,10 +99,14 @@
 }
 
 .bmp-actions {
+  margin-top: 1rem;
+}
+
+.bmp-actions p {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
-  margin-top: 1rem;
+  margin: 0;
 }
 
 .bmp-actions a {
