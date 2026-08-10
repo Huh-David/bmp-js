@@ -12,12 +12,19 @@ export class NotBmpInputError extends SharpAdapterError {
   }
 }
 
+const SHARP_LOAD_FAILURE_MESSAGE =
+  "Unable to resolve optional peer dependency 'sharp' from this module. " +
+  "Install it, or pass a module instance explicitly. " +
+  "See the 'cause' property for the underlying resolution error.";
+
 export class SharpModuleLoadError extends SharpAdapterError {
-  constructor(
-    message = "Unable to load optional peer dependency 'sharp'. Install it or pass a module instance.",
-  ) {
+  constructor(message = SHARP_LOAD_FAILURE_MESSAGE, options?: { cause?: unknown }) {
     super(message);
     this.name = "SharpModuleLoadError";
+
+    if (options && "cause" in options) {
+      this.cause = options.cause;
+    }
   }
 }
 
