@@ -19,9 +19,31 @@ import type {
   SharpRawLike,
 } from "./types";
 
-const require = createRequire(
-  typeof __filename === "string" ? __filename : `${process.cwd()}/package.json`,
-);
+/**
+ * Resolution base for the optional `sharp` peer dependency.
+ *
+ * Optional peers must resolve relative to *this module*, never the caller's
+ * working directory: an ESM consumer started from a different cwd (systemd
+ * units, container WORKDIRs, monorepo task runners) would otherwise fail to
+ * find an installed `sharp`.
+ *
+ * `__filename` is a real path in both build formats: natively in CJS, and in
+ * ESM via tsup's `shims` option, which derives it from `import.meta.url`. That
+ * shim is what makes this correct — see the `shims` note in tsup.config.ts.
+ * `process.cwd()` survives only as a last-resort fallback for exotic bundler
+ * output that provides no `__filename` at all.
+ */
+function resolveRequireBase(): string {
+  const filename = typeof __filename === "string" ? __filename : undefined;
+
+  if (filename !== undefined && filename.length > 0) {
+    return filename;
+  }
+
+  return `${process.cwd()}/package.json`;
+}
+
+const require = createRequire(resolveRequireBase());
 
 function toUint8Array(input: PixelSource): Uint8Array {
   if (ArrayBuffer.isView(input)) {
@@ -72,7 +94,7 @@ function loadSharpModule(sharpModule?: SharpModule): SharpModule {
       throw error;
     }
 
-    throw new SharpModuleLoadError();
+    throw new SharpModuleLoadError(undefined, { cause: error });
   }
 }
 
