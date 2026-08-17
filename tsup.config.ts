@@ -11,11 +11,14 @@ export default defineConfig({
   clean: true,
   target: "node22",
   platform: "node",
-  // Derives `__filename`/`__dirname` in the ESM output from `import.meta.url`.
-  // Without this the ESM build has no `__filename` at all, and the optional
-  // `sharp` peer would resolve relative to the consumer's cwd. See
-  // `resolveRequireBase` in src/sharp/index.ts.
-  shims: true,
+  // Deliberately off. tsup's shim is injected at the top of the *shared* chunk,
+  // which the browser-safe main entry also imports, and it eagerly evaluates
+  // `fileURLToPath(import.meta.url)` at module scope. Bundlers that polyfill
+  // `url` (Next.js/Turbopack ships one without `fileURLToPath`) then crash on
+  // `import { decode } from "@huh-david/bmp-js"` alone. The sharp entry derives
+  // its own resolution base instead — see `resolveRequireBase` in
+  // src/sharp/index.ts.
+  shims: false,
   outExtension({ format }) {
     return {
       js: format === "cjs" ? ".cjs" : ".js",

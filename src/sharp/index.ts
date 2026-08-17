@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 
 import { decode } from "../decoder";
 import { encode } from "../encoder";
@@ -20,6 +21,22 @@ import type {
 } from "./types";
 
 /**
+ * Reads `import.meta.url` without letting the CJS build trip over it.
+ *
+ * esbuild rewrites `import.meta` in CJS output rather than failing the build,
+ * and the replacement is not guaranteed to yield a usable `file:` URL, so the
+ * result is treated as untrusted in both formats.
+ */
+function importMetaUrl(): string | undefined {
+  try {
+    const url: unknown = import.meta.url;
+    return typeof url === "string" ? url : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Resolution base for the optional `sharp` peer dependency.
  *
  * Optional peers must resolve relative to *this module*, never the caller's
@@ -27,23 +44,41 @@ import type {
  * units, container WORKDIRs, monorepo task runners) would otherwise fail to
  * find an installed `sharp`.
  *
- * `__filename` is a real path in both build formats: natively in CJS, and in
- * ESM via tsup's `shims` option, which derives it from `import.meta.url`. That
- * shim is what makes this correct — see the `shims` note in tsup.config.ts.
- * `process.cwd()` survives only as a last-resort fallback for exotic bundler
- * output that provides no `__filename` at all.
+ * The base is derived per format without tsup's `shims` option, which injected
+ * an eager `fileURLToPath(import.meta.url)` into the chunk shared with the
+ * browser-safe main entry and broke bundlers that polyfill `url`. In CJS
+ * `__filename` is real; in ESM `import.meta.url` is, and it is converted only
+ * when a base is actually needed. `process.cwd()` survives as a last-resort
+ * fallback for bundler output that provides neither.
  */
 function resolveRequireBase(): string {
-  const filename = typeof __filename === "string" ? __filename : undefined;
+  // `typeof` keeps this a ReferenceError-free probe in ESM, where the binding
+  // does not exist at all.
+  if (typeof __filename === "string" && __filename.length > 0) {
+    return __filename;
+  }
 
-  if (filename !== undefined && filename.length > 0) {
-    return filename;
+  // `import.meta` is a syntax error in CJS, so it is reached only through the
+  // ESM branch that esbuild keeps after format-specific dead-code elimination.
+  const metaUrl = importMetaUrl();
+
+  if (metaUrl !== undefined && metaUrl.startsWith("file:")) {
+    return fileURLToPath(metaUrl);
   }
 
   return `${process.cwd()}/package.json`;
 }
 
-const require = createRequire(resolveRequireBase());
+/**
+ * Built on first use so that merely importing this entry never touches
+ * `node:module` or `node:url` resolution.
+ */
+let cachedRequire: NodeRequire | undefined;
+
+function getRequire(): NodeRequire {
+  cachedRequire ??= createRequire(resolveRequireBase());
+  return cachedRequire;
+}
 
 function toUint8Array(input: PixelSource): Uint8Array {
   if (ArrayBuffer.isView(input)) {
@@ -78,7 +113,7 @@ function loadSharpModule(sharpModule?: SharpModule): SharpModule {
   }
 
   try {
-    const loaded = require("sharp") as SharpModule | { default?: SharpModule };
+    const loaded = getRequire()("sharp") as SharpModule | { default?: SharpModule };
 
     if (typeof loaded === "function") {
       return loaded;
